@@ -1,0 +1,8 @@
+# Statik site: derleme adımı yok, kök dizin yayınlanır.
+# Güvenlik ve cache header'ları _headers dosyasında tanımlıdır.
+[build]
+  publish = "."
+
+# sw.js ve diğer dosyaların Netlify tarafından değiştirilmesini engelle
+[build.processing]
+  skip_processing = true

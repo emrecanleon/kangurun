@@ -1,0 +1,30 @@
+{
+  "id": "./",
+  "name": "KanguRun",
+  "short_name": "KanguRun",
+  "description": "Engellerden kaç, gece ve gündüz arasında koş. Çevrimdışı çalışan, 10 dilli kanguru koşu oyunu.",
+  "lang": "tr",
+  "dir": "auto",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#e0b27f",
+  "theme_color": "#e0b27f",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
