@@ -811,58 +811,65 @@
           font-size: 10px;
         }
       }
-      /* ===== iPad Mini (4:3) ve benzeri tabletler için kesin düzeltme ===== */
+      /* ===== iPad Mini (4:3) ve benzeri tabletler için KESİN düzeltme ===== */
       @media (max-width: 1024px) and (min-width: 700px) {
-        /* 1. SKOR TABELASI VE CAN SİMGELERİ DÜZELTMESİ */
-        #topleft, #topright {
-          gap: 6px !important; /* Butonlar arası boşluğu azalt */
-        }
-        
+        /* 1. SKOR TABELASI DÜZELTMESİ */
         #scoreRow {
-          width: 210px !important; /* Skor tabelası için daha fazla yer */
-          min-width: 210px !important;
-          max-width: 210px !important;
-          justify-content: space-between !important;
+          width: 220px !important; /* Kutuya biraz daha genişlik */
+          min-width: 220px !important;
+          max-width: 220px !important;
+          justify-content: space-between !important; /* Sol ve sağa yasla */
           padding: 0 10px !important;
-          height: 36px !important;
-          gap: 0 !important; /* İç öğeler arası gap'i sıfırla, space-between kullan */
+          height: 38px !important;
+          gap: 0 !important; /* space-between kullandığımız için gap'i sıfırla */
         }
 
+        #scoreRow .hi-group {
+          gap: 4px !important; /* Kupa ve rekor arasını açtık */
+        }
+
+        /* Yazıları küçülttük ve incelttik */
         #scoreRow .score-hi, 
         #scoreRow .score-cur {
-          font-size: 11px !important; /* Yazı boyutunu küçült */
-          letter-spacing: -0.2px !important; /* Sıkıştır */
+          font-size: 11px !important;
+          letter-spacing: -0.5px !important; /* Harfleri daha da sıkıştırdık */
         }
 
         #scoreRow .score-hi-label {
           font-size: 12px !important;
         }
 
+        /* Kanguruları (canları) belirgin şekilde küçültüp sağa yasladık */
         #scoreRow .hp {
-          font-size: 10px !important; /* Can (kanguru) simgesini ufalt */
-          transform: scale(0.8); /* Görsel olarak da küçült */
-          transform-origin: center right;
-          margin: 0 !important;
+          font-size: 10px !important;
+          transform: scale(0.7) !important;
+          transform-origin: center right !important;
+          margin-inline-start: 2px !important; /* Skor ile canlar arasına minik boşluk */
         }
 
         /* 2. DİL MENÜSÜ DÜZELTMESİ */
         #langMenu {
-          width: 155px !important;
+          width: 170px !important; /* Menüyü genişlettik */
+          padding: 6px !important;
         }
         
         .lang-item {
-          gap: 12px !important;
-          padding: 8px 6px !important; /* Sağ-sol boşluğu azalt */
+          gap: 18px !important; /* Bayrak ve yazı arasını iyice açtık */
+          padding: 8px 12px !important; 
           justify-content: flex-start !important;
         }
         
         .lang-item svg {
           width: 24px !important;
           height: 16px !important;
-          flex-shrink: 0;
+          flex-shrink: 0 !important; /* Bayrağın sıkışmasını engelle */
+        }
+        
+        .lang-item span {
+          font-size: 13px !important; /* Dil isimlerini biraz daha okunaklı yaptık */
         }
 
-        /* 3. YAZI VE BUTON BOYUTU */
+        /* 3. GENEL BUTONLAR */
         .hud-btn {
           font-size: 12px !important;
           min-width: 150px !important;
