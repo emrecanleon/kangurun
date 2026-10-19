@@ -153,8 +153,9 @@
         gap: 20px;
         transition: opacity 0.2s;
         position: fixed;
-        inset: 0;
-        margin: auto;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
         width: fit-content;
         max-width: min(88vw, 560px);
         height: fit-content;
@@ -804,6 +805,21 @@
 
         #scoreRow .score-hi-label {
           font-size: 10px;
+        }
+      }
+      /* ===== iPad Mini (4:3) Düzeltmesi ===== */
+      @media (max-width: 1024px) and (min-width: 700px) {
+        /* Skor yazılarını küçült ki kutuya sığsın */
+        #scoreRow .score-hi,
+        #scoreRow .score-cur,
+        #scoreRow .score-hi-label {
+          font-size: 11px !important;
+        }
+        /* Kutuyu biraz genişlet */
+        #scoreRow {
+          width: 165px !important;
+          min-width: 165px !important;
+          max-width: 165px !important;
         }
       }
     </style>
