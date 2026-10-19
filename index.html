@@ -2633,8 +2633,12 @@
             jump();
           }
         });
-        // Sabit zıplama: sadece pointerdown/keydown gerekli
+        // Hem dokunmatik (iPad/iPhone) hem fare (PC) desteği
         canvas.addEventListener("pointerdown", () => jump());
+        canvas.addEventListener("touchstart", (e) => {
+          e.preventDefault();
+          jump();
+        }, { passive: false });
 
         // ===== SES (Web Audio, dosyasız) =====
         let audioCtx = null;
@@ -2980,6 +2984,11 @@
             else jump();
           });
         renderCard();
+        document.getElementById("cardBtn").addEventListener("touchstart", (e) => {
+          e.preventDefault();
+          if (paused) setPaused(false);
+          else jump();
+        }, { passive: false });
 
         renderLives();
         fitCanvas();
