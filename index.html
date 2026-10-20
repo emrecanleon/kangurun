@@ -806,80 +806,108 @@
           font-size: 10px;
         }
       }
-      /* ===== SADECE flex gap DESTEKLEMEYEN ESKİ CİHAZLAR İÇİN DÜZELTME ===== */
-      /* iPad Mini 2 gibi iOS 12 ve altı cihazlar bu kurala girer, modern cihazlar girmez. */
-      @supports not (gap: 1px) {
-        /* HUD butonlarındaki ikon-yazı arası boşluk */
-        .hud-btn > * + * {
-          margin-left: 6px;
-        }
+      /* ===== ESKİ CİHAZ DÜZELTMESİ (JS ile tespit edilir) ===== */
+      /* html.no-flex-gap sınıfı sadece flex gap desteklemeyen cihazlara eklenir */
+      html.no-flex-gap .hud-btn > * + * {
+        margin-left: 6px;
+      }
+      html.no-flex-gap .hud-btn > * {
+        flex-shrink: 0;
+      }
 
-        /* Skor satırı: esnek düzen ve öğeler arası boşluklar */
-        #scoreRow {
-          justify-content: space-between;
-          flex-wrap: nowrap;
-        }
-        #scoreRow .hi-group {
-          margin-right: 6px;
-        }
-        #scoreRow .hi-group > * + * {
-          margin-left: 4px;
-        }
-        #scoreRow .hp + .hp {
-          margin-left: 2px;
-        }
-        #scoreRow .score-hi,
-        #scoreRow .score-cur,
-        #scoreRow .score-hi-label {
-          line-height: 1;
-          display: inline-block;
-          vertical-align: middle;
-        }
+      /* Skor satırı: daralmadan, ortalanmış */
+      html.no-flex-gap #scoreRow {
+        justify-content: center;
+        flex-wrap: nowrap;
+        overflow: hidden;
+        padding: 0 4px;
+        height: 36px;
+        max-height: 36px;
+      }
+      html.no-flex-gap #scoreRow .hi-group {
+        margin-right: 5px;
+        flex-shrink: 0;
+      }
+      html.no-flex-gap #scoreRow .hi-group > * + * {
+        margin-left: 3px;
+      }
+      html.no-flex-gap #scoreRow .hp + .hp {
+        margin-left: 2px;
+      }
+      html.no-flex-gap #scoreRow .score-hi-label,
+      html.no-flex-gap #scoreRow .score-hi,
+      html.no-flex-gap #scoreRow .score-cur {
+        line-height: 1;
+        display: inline-block;
+        vertical-align: middle;
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+      html.no-flex-gap #scoreRow .score-hi-label { font-size: 12px; }
+      html.no-flex-gap #scoreRow .score-hi      { font-size: 11px; letter-spacing: 0; margin-left: 2px; }
+      html.no-flex-gap #scoreRow .score-cur     { font-size: 11px; margin: 0 2px; }
+      html.no-flex-gap #scoreRow .hp            { font-size: 11px; }
 
-        /* Dil menüsü: bayrak ve yazı arası boşluk, yazının kaymasını engelle */
-        .lang-item .flag,
-        .lang-item svg {
-          flex-shrink: 0;
-          margin-right: 10px;
-          display: inline-block;
-          vertical-align: middle;
-        }
-        .lang-item span {
-          white-space: nowrap;
-          line-height: 1.2;
-        }
+      /* Dil menüsü: bayrak sabit, yazı kaymaz */
+      html.no-flex-gap .lang-item .flag,
+      html.no-flex-gap .lang-item svg {
+        flex-shrink: 0;
+        margin-right: 12px;
+        display: inline-block;
+        vertical-align: middle;
+      }
+      html.no-flex-gap .lang-item span {
+        white-space: nowrap;
+        line-height: 1.2;
+        display: inline-block;
+        vertical-align: middle;
+      }
 
-        /* Reset onay menüsü */
-        #resetConfirm > * + * {
-          margin-top: 8px;
-        }
-        #resetConfirm .btn-row {
-          justify-content: center;
-        }
-        #resetConfirm .btn-row > * + * {
-          margin-left: 6px;
-        }
+      /* Reset menüsü */
+      html.no-flex-gap #resetConfirm > * + * {
+        margin-top: 8px;
+      }
+      html.no-flex-gap #resetConfirm .btn-row {
+        justify-content: center;
+      }
+      html.no-flex-gap #resetConfirm .btn-row > * + * {
+        margin-left: 6px;
+      }
 
-        /* iPad Mini 2 (768px) gibi geniş ama eski cihazlar için HUD küçültme */
-        @media (max-width: 800px) and (orientation: portrait) {
-          .hud-btn {
-            min-width: 145px;
-            width: 145px;
-            max-width: 145px;
-            font-size: 12px;
-            padding: 6px 8px;
-          }
-          #scoreRow {
-            justify-content: space-between;
-            padding: 0 6px;
-          }
-          #scoreRow .score-hi-label { font-size: 12px; }
-          #scoreRow .score-hi, 
-          #scoreRow .score-cur { font-size: 13px; }
-          #scoreRow .hp { font-size: 11px; }
-          #langMenu { min-width: 140px; }
-          .lang-item { padding: 6px 8px; font-size: 13px; }
-        }
+      /* HUD butonları daralt */
+      html.no-flex-gap .hud-btn {
+        min-width: 145px;
+        width: 145px;
+        max-width: 145px;
+        font-size: 12px;
+        padding: 6px 8px;
+      }
+
+      /* Mesaj / "Duraklatıldı" tam ortalansın, taşmasın */
+      html.no-flex-gap #card {
+        padding: 12px 8px;
+        max-width: 96vw;
+        width: 96vw;
+        left: 0;
+        right: 0;
+        margin-left: auto;
+        margin-right: auto;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      html.no-flex-gap #msg {
+        max-width: 100%;
+        width: 100%;
+        padding: 0 4px;
+        text-align: center;
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        line-height: 1.35;
+        margin: 0 auto;
+      }
+      html.no-flex-gap #wrap {
+        justify-content: center;
       }
     </style>
   </head>
@@ -3072,6 +3100,21 @@
       })();
     </script>
     <script>
+      /* Flex gap desteği yoksa html.no-flex-gap sınıfını ekle.
+         Bu sınıf sadece eski iOS/Android cihazlarda aktif olur. */
+      (function () {
+        var el = document.createElement("div");
+        el.style.cssText = "display:flex;flex-direction:column;gap:1px;position:absolute;visibility:hidden;";
+        el.appendChild(document.createElement("div"));
+        document.body.appendChild(el);
+        var supported = el.scrollHeight === 2;
+        document.body.removeChild(el);
+        if (!supported) {
+          document.documentElement.classList.add("no-flex-gap");
+        }
+      })();
+    </script>
+    <script>
       /* Service worker: kayıt + sürüm değişince otomatik güncelleme */
       if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
         window.addEventListener("load", function () {
@@ -3095,5 +3138,6 @@
         });
       }
     </script>
+
   </body>
 </html>
