@@ -807,32 +807,39 @@
         }
       }
       /* ===== ESKİ CİHAZ DÜZELTMESİ (JS ile tespit edilir) ===== */
-      /* html.no-flex-gap sınıfı sadece flex gap desteklemeyen cihazlara eklenir */
+      html.no-flex-gap .hud-btn {
+        min-width: 130px;
+        width: 130px;
+        max-width: 130px;
+        font-size: 11px;
+        padding: 5px 6px;
+        min-height: 34px;
+      }
       html.no-flex-gap .hud-btn > * + * {
-        margin-left: 6px;
+        margin-left: 4px;
       }
       html.no-flex-gap .hud-btn > * {
         flex-shrink: 0;
       }
 
-      /* Skor satırı: daralmadan, ortalanmış */
+      /* Skor satırı */
       html.no-flex-gap #scoreRow {
         justify-content: center;
         flex-wrap: nowrap;
         overflow: hidden;
-        padding: 0 4px;
-        height: 36px;
-        max-height: 36px;
+        padding: 0 2px;
+        height: 34px;
+        max-height: 34px;
       }
       html.no-flex-gap #scoreRow .hi-group {
-        margin-right: 5px;
+        margin-right: 3px;
         flex-shrink: 0;
       }
       html.no-flex-gap #scoreRow .hi-group > * + * {
-        margin-left: 3px;
+        margin-left: 2px;
       }
       html.no-flex-gap #scoreRow .hp + .hp {
-        margin-left: 2px;
+        margin-left: 1px;
       }
       html.no-flex-gap #scoreRow .score-hi-label,
       html.no-flex-gap #scoreRow .score-hi,
@@ -843,16 +850,16 @@
         flex-shrink: 0;
         white-space: nowrap;
       }
-      html.no-flex-gap #scoreRow .score-hi-label { font-size: 12px; }
-      html.no-flex-gap #scoreRow .score-hi      { font-size: 11px; letter-spacing: 0; margin-left: 2px; }
-      html.no-flex-gap #scoreRow .score-cur     { font-size: 11px; margin: 0 2px; }
-      html.no-flex-gap #scoreRow .hp            { font-size: 11px; }
+      html.no-flex-gap #scoreRow .score-hi-label { font-size: 11px; }
+      html.no-flex-gap #scoreRow .score-hi      { font-size: 10px; letter-spacing: 0; margin-left: 1px; }
+      html.no-flex-gap #scoreRow .score-cur     { font-size: 10px; margin: 0 1px; }
+      html.no-flex-gap #scoreRow .hp            { font-size: 10px; }
 
-      /* Dil menüsü: bayrak sabit, yazı kaymaz */
+      /* Dil menüsü */
       html.no-flex-gap .lang-item .flag,
       html.no-flex-gap .lang-item svg {
         flex-shrink: 0;
-        margin-right: 12px;
+        margin-right: 8px;
         display: inline-block;
         vertical-align: middle;
       }
@@ -862,49 +869,50 @@
         display: inline-block;
         vertical-align: middle;
       }
+      html.no-flex-gap #langMenu {
+        min-width: 110px;
+      }
+      html.no-flex-gap .lang-item {
+        padding: 4px 6px;
+        font-size: 11px;
+      }
+      html.no-flex-gap .lang-item svg {
+        width: 18px;
+        height: 12px;
+      }
 
       /* Reset menüsü */
       html.no-flex-gap #resetConfirm > * + * {
-        margin-top: 8px;
+        margin-top: 6px;
       }
       html.no-flex-gap #resetConfirm .btn-row {
         justify-content: center;
       }
       html.no-flex-gap #resetConfirm .btn-row > * + * {
-        margin-left: 6px;
-      }
-
-      /* HUD butonları daralt */
-      html.no-flex-gap .hud-btn {
-        min-width: 145px;
-        width: 145px;
-        max-width: 145px;
-        font-size: 12px;
-        padding: 6px 8px;
+        margin-left: 4px;
       }
 
       /* Mesaj / "Duraklatıldı" tam ortalansın, taşmasın */
       html.no-flex-gap #card {
-        padding: 12px 8px;
-        max-width: 96vw;
-        width: 96vw;
-        left: 0;
-        right: 0;
-        margin-left: auto;
-        margin-right: auto;
+        padding: 10px 4px;
+        max-width: 94vw;
+        width: 94vw;
+        left: 3vw;
+        right: 3vw;
         top: 50%;
         transform: translateY(-50%);
       }
       html.no-flex-gap #msg {
         max-width: 100%;
         width: 100%;
-        padding: 0 4px;
+        padding: 0 2px;
         text-align: center;
         white-space: normal;
         overflow-wrap: break-word;
         word-break: break-word;
-        line-height: 1.35;
+        line-height: 1.3;
         margin: 0 auto;
+        font-size: 14px; /* Yazıyı biraz küçült ki kesilmesin */
       }
       html.no-flex-gap #wrap {
         justify-content: center;
