@@ -6,46 +6,35 @@
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
-    <title>KanguRun</title>
+    <title>DinoRun</title>
     <meta
       name="description"
-      content="KanguRun: engellerden zıpla, gece ve gündüz arasında koş. Çevrimdışı çalışan, 10 dilli kanguru koşu oyunu."
+      content="DinoRun: kaktüslerden kaç, gece ve gündüz arasında koş. Çevrimdışı çalışan, 10 dilli dinozor koşu oyunu."
     />
     <link rel="manifest" href="manifest.webmanifest" />
-    <meta name="theme-color" content="#e0b27f" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#6b4a52" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f7f7f7" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="KanguRun" />
+    <meta name="apple-mobile-web-app-title" content="DinoRun" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="application-name" content="KanguRun" />
+    <meta name="application-name" content="DinoRun" />
     <meta name="format-detection" content="telephone=no" />
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
     <script>
-      /* İki theme-color etiketi (açık #e0b27f / koyu #6b4a52) ilk açılışta sistem temasına göre seçilir.
-         Oyun başladıktan sonra gece/gündüz geçişinde --bg değerini (#e0b27f ↔ #6b4a52) kare kare
-         karıştırdığı için, iki etiketi de sayfanın o anki arka plan rengine eşitliyoruz. */
+      /* theme-color: sistem temasına ve oyunun data-theme değişimine (gece/gündüz) uyar */
       (function () {
-        var metas = document.querySelectorAll('meta[name="theme-color"]');
-        var last = "";
+        var meta = document.querySelector('meta[name="theme-color"]');
         function sync() {
           var bg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
-          if (!bg || bg === last) return;
-          last = bg;
-          Array.prototype.forEach.call(metas, function (m) {
-            m.setAttribute("content", bg);
-          });
+          if (bg) meta.setAttribute("content", bg);
         }
         document.addEventListener("DOMContentLoaded", sync);
         new MutationObserver(sync).observe(document.documentElement, {
           attributes: true,
           attributeFilter: ["data-theme"],
         });
-        setInterval(function () {
-          if (!document.hidden) sync();
-        }, 250);
         if (window.matchMedia) {
           var mq = matchMedia("(prefers-color-scheme: dark)");
           (mq.addEventListener ? mq.addEventListener.bind(mq, "change") : mq.addListener.bind(mq))(sync);
@@ -54,31 +43,33 @@
     </script>
     <style>
       :root {
-        --bg: #e0b27f;
-        --fg: #3b2a1f;
-        --ground: #b5532c;
-        --accent: #3b2a1f;
+        --bg: #f7f7f7;
+        --fg: #202124;
+        --ground: #535353;
       }
 
       @media (prefers-color-scheme: dark) {
         :root:not([data-theme="light"]) {
-          --bg: #6b4a52;
-          --fg: #f2dcc0;
-          --ground: #c46a3a;
-          --accent: #f2dcc0;
+          --bg: #202124;
+          --fg: #e8eaed;
+          --ground: #9aa0a6;
         }
       }
 
       :root[data-theme="dark"] {
-        --bg: #1d1426;
-        --fg: #f2dcc0;
-        --ground: #c46a3a;
-        --accent: #f2dcc0;
+        --bg: #202124;
+        --fg: #e8eaed;
+        --ground: #9aa0a6;
+      }
+
+      :root[data-theme="light"] {
+        --bg: #f7f7f7;
+        --fg: #202124;
+        --ground: #535353;
       }
 
       html {
         overflow-x: hidden;
-        overflow-y: hidden;
         touch-action: manipulation; /* Çift dokunma zoom'unu engeller */
         -webkit-text-size-adjust: 100%; /* iOS metin boyutu ayarını sabitler */
       }
@@ -100,11 +91,8 @@
         flex-direction: column;
         align-items: center;
         justify-content: flex-start;
-        min-height: 100vh;
-        max-height: 100vh;
+        min-height: 100%;
         gap: 12px;
-        overflow: hidden;
-        position: relative;
       }
 
       #wrap {
@@ -120,155 +108,129 @@
 
       canvas {
         position: fixed;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        width: 100vw;
-        height: 100vh;
-        max-width: 100vw;
-        max-height: 100vh;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
         background: var(--bg);
         touch-action: none;
         image-rendering: pixelated;
         image-rendering: crisp-edges;
-        z-index: 1;
-        display: block;
       }
 
-      #msg {
-        font-family: "Courier New", monospace;
-        font-size: clamp(15px, 2.2vw, 22px);
-        font-weight: 700;
-        text-align: center;
-        line-height: 1.45;
-        max-width: 90vw;
-        white-space: normal;
-        margin: 0 auto;
+      /* Tüm ekranlarda canvas tam ekran — JS fitCanvas() yönetir */
+
+      /* ===== TÜM EKRANLARDA: HUD cam efektli overlay ===== */
+      .hud {
+        top: calc(12px + env(safe-area-inset-top, 0px));
       }
-      #card {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 20px;
-        transition: opacity 0.2s;
+      #topleft {
+        left: calc(12px + env(safe-area-inset-left, 0px));
+      }
+      #topright {
+        right: calc(12px + env(safe-area-inset-right, 0px));
+      }
+      .hud-btn {
+        background: rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+        border: 1.8px solid rgba(255, 255, 255, 0.75);
+        transition:
+          transform 0.1s,
+          background 0.3s,
+          color 0.3s,
+          border-color 0.3s;
+      }
+      /* Koyu tema (gece modu) — cam efektli */
+      :root[data-theme="dark"] .hud-btn {
+        background: rgba(20, 30, 55, 0.25);
+        color: #f2f4f7;
+        border: 1.8px solid rgba(242, 244, 247, 0.55);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+        text-shadow:
+          0 2px 4px rgba(0, 0, 0, 0.85),
+          0 0 1px rgba(0, 0, 0, 0.9);
+      }
+      /* Gece modunda skor: rekor açık gri-beyaz, skor parlak sarı + ince koyu kontur */
+      :root[data-theme="dark"] #scoreRow .score-hi-label {
+        color: #e8eaed;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+      }
+      /* Gece modu: rekor rengi altın kalır */
+      :root[data-theme="dark"] #scoreRow .score-hi {
+        color: #DAA520;
+      }
+      :root[data-theme="dark"] #scoreRow .score-cur {
+        color: #a0a5aa; /* Gece için biraz daha açık füme */
+      }
+      :root[data-theme="dark"] #scoreRow .hp svg {
+        color: #e8eaed;
+        fill: #e8eaed;
+      }
+      :root[data-theme="dark"] #scoreRow .hp.off svg {
+        color: #5f6368; /* Gece canı bitince soluk gri */
+        fill: #5f6368;
+      }
+
+      /* Tüm ekranlarda mesaj konumu */
+      #msg {
+        top: 45%;
+        font-size: clamp(13px, 2.2vh, 22px);
+      }
+      @media (orientation: portrait) and (max-width: 700px) {
+        #msg {
+          top: 38%;
+        }
+      }
+      #aboutPanel {
+        max-height: 92vh;
+        width: min(94vw, 640px);
+      }
+      #msg {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 5;
+        font-size: clamp(13px, 3.4vw, 19px);
+        font-weight: 700;
+        opacity: 0.9;
+        text-align: center;
+        min-height: 18px;
+        max-width: 88vw;
+        pointer-events: none;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          Arial,
+          sans-serif;
+        color: var(--fg);
+        transition: color 0.4s ease;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+      }
+
+      #about {
         position: fixed;
         inset: 0;
-        margin: auto;
-        width: fit-content;
-        max-width: min(88vw, 560px);
-        height: fit-content;
-        max-height: 85vh;
-        z-index: 5;
-        pointer-events: auto;
-        color: var(--fg);
-        font-family: "Courier New", monospace;
-        box-sizing: border-box;
-        padding: 16px 20px;
-        overflow: hidden;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        background: rgba(0, 0, 0, 0.55);
       }
 
-      #card.off {
-        visibility: hidden;
-        opacity: 0;
-      }
-
-      #cardScore {
-        font-size: 52px;
-        font-weight: 800;
-        letter-spacing: 5px;
-        font-variant-numeric: tabular-nums;
-      }
-
-      #cardScore.hidden {
+      #about[hidden] {
         display: none;
       }
 
-      #cardBtn {
-        width: 64px;
-        height: 64px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 28px;
-        cursor: pointer;
-        user-select: none;
-        -webkit-user-select: none;
-        background: #1e3a5f;
-        color: #DAA520;
-        box-shadow:
-          0 3px 0 #0f2038,
-          0 4px 14px rgba(0, 0, 0, 0.4);
-        font-weight: 900;
-        transition:
-          transform 0.08s,
-          box-shadow 0.08s,
-          background 0.3s,
-          color 0.3s;
-        flex-shrink: 0;
-      }
-
-      /* Gece modu: buton altın zemin, ikon lacivert */
-      :root[data-theme="dark"] #cardBtn {
-        background: #DAA520;
-        color: #1e3a5f;
-        box-shadow:
-          0 3px 0 #B8860B,  /* #DAA520'nin koyu gölgesi */
-          0 4px 14px rgba(0, 0, 0, 0.4);
-      }
-      :root[data-theme="dark"] #cardBtn:active {
-        box-shadow:
-          0 1px 0 #B8860B,
-          0 2px 8px rgba(0, 0, 0, 0.4);
-      }
-
-      #cardBtn:active {
-        transform: translateY(3px);
-        box-shadow:
-          0 1px 0 #0f2038,
-          0 2px 8px rgba(0, 0, 0, 0.4);
-      }
-      /* ===== Kart yazı renkleri: gündüz modu ===== */
-      #card {
-        color: #3b2a1f;
-      }
-      #cardScore {
-        color: #1e3a5f;
-        text-shadow:
-          0 2px 10px rgba(255, 255, 255, 0.7),
-          0 0 3px rgba(255, 255, 255, 0.9);
-      }
-      #msg {
-        color: #1e3a5f;
-        text-shadow:
-          0 2px 10px rgba(255, 255, 255, 0.7),
-          0 0 3px rgba(255, 255, 255, 0.9);
-      }
-
-      /* ===== Kart yazı renkleri: gece modu ===== */
-      :root[data-theme="dark"] #card {
-        color: #f2dcc0;
-      }
-      :root[data-theme="dark"] #cardScore {
-        color: #DAA520;
-        text-shadow:
-          0 3px 10px rgba(0, 0, 0, 0.8),
-          0 0 26px rgba(218, 165, 32, 0.55); /* #DAA520'nin RGB'si */
-      }
-      :root[data-theme="dark"] #msg {
-        color: #DAA520;
-        text-shadow:
-          0 2px 10px rgba(0, 0, 0, 0.85),
-          0 0 3px rgba(0, 0, 0, 0.7);
-      }
-
-      .hud-btn:disabled {
-        opacity: 0.4;
-        cursor: default;
-      }
-
-      /* ===== HUD ===== */
       .hud {
         position: fixed;
         top: calc(12px + env(safe-area-inset-top, 0px));
@@ -348,39 +310,82 @@
         height: 15px;
         display: block;
       }
-      :root[data-theme="dark"] .hud-btn {
-        background: rgba(20, 30, 55, 0.25);
-        color: #f2f4f7;
-        border-color: rgba(242, 244, 247, 0.55);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
-        text-shadow:
-          0 2px 4px rgba(0, 0, 0, 0.85),
-          0 0 1px rgba(0, 0, 0, 0.9);
+
+      #scoreRow {
+        cursor: default;
+        justify-content: space-between;
+        height: 40px;
+        max-height: 40px;
+        padding: 0 14px;
+        overflow: hidden;
+        gap: 4px;
       }
 
-      /* Gece modu: rekor rengi altın kalır */
-      :root[data-theme="dark"] #scoreRow .score-hi {
-        color: #DAA520;
+      #scoreRow .hi-group {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
       }
-      :root[data-theme="dark"] #resetConfirm {
-        background: rgba(29, 20, 38, 0.96);
-        color: #f2dcc0;
-        border-color: rgba(242, 220, 192, 0.2);
+
+      #scoreRow .score-hi-label {
+        font-size: 16px;
+        line-height: 1;
+        display: inline-block;
+        flex-shrink: 0;
       }
-      :root[data-theme="dark"] #resetConfirm button {
-        border-color: rgba(242, 220, 192, 0.3);
-        color: #f2dcc0;
+
+      #scoreRow .score-hi {
+        color: #1a1a1a;
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: 0.3px;
+        font-variant-numeric: tabular-nums;
       }
-      :root[data-theme="dark"] #langMenu {
-        background: #2a1d35;
-        border-color: rgba(242, 220, 192, 0.2);
+
+      #scoreRow .score-cur {
+        color: #6e7377;
+        font-size: 16px;
+        font-weight: 800;
+        margin-inline-start: auto;
+        margin-inline-end: 0;
+        flex-shrink: 0;
+        font-variant-numeric: tabular-nums;
       }
-      :root[data-theme="dark"] .lang-item {
-        color: #f2dcc0;
+
+      #scoreRow .hp {
+        font-size: 18px;
+        display: inline-flex;
+        align-items: flex-end;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        margin-inline-start: 0;
+        vertical-align: middle;
       }
-      :root[data-theme="dark"] .lang-item:hover,
-      :root[data-theme="dark"] .lang-item.active {
-        background: rgba(242, 220, 192, 0.1);
+
+      #scoreRow .hp svg {
+        width: 18px;
+        height: 18px;
+        display: block;
+        color: var(--fg);
+        fill: var(--fg);
+        shape-rendering: crispEdges; /* Çizgileri yok eder, içi dolu gösterir */
+      }
+
+      #scoreRow .hp.off svg {
+        color: #b0b0b0; /* Gündüz canı bitince soluk gri */
+        fill: #b0b0b0; 
+      }
+
+      #lives {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 2px;
+        flex-shrink: 0;
+        padding-inline-end: 2px;
       }
 
       #resetConfirm {
@@ -413,6 +418,15 @@
           color 0.3s,
           border-color 0.3s;
       }
+      :root[data-theme="dark"] #resetConfirm {
+        background: rgba(32, 33, 36, 0.96);
+        color: #e8eaed;
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+      :root[data-theme="dark"] #resetConfirm button {
+        border-color: rgba(255, 255, 255, 0.3);
+        color: #e8eaed;
+      }
 
       #resetConfirm > span {
         text-align: center;
@@ -430,8 +444,8 @@
 
       #resetConfirm button {
         background: transparent;
-        border: 1px solid #1a3a4a;
-        color: #1a3a4a;
+        border: 1px solid var(--fg);
+        color: var(--fg);
         font-family: inherit;
         font-size: 12px;
         padding: 4px 10px;
@@ -440,58 +454,10 @@
       }
 
       #resetConfirm button:focus-visible {
-        outline: 2px solid #1a3a4a;
+        outline: 2px solid var(--fg);
         outline-offset: 1px;
       }
 
-      #scoreRow {
-        cursor: default;
-        justify-content: space-between;
-        height: 40px;
-        max-height: 40px;
-        padding: 0 14px;
-        text-shadow: none;
-      }
-
-      #scoreRow .hi-group {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        margin-inline-end: 0;
-      }
-
-      #scoreRow .score-hi-label {
-        font-size: 16px;
-        line-height: 1;
-        display: block;
-      }
-
-      #scoreRow .score-hi {
-        color: #1e3a5f;
-        font-size: 16px;
-        font-weight: 800;
-        letter-spacing: 0.3px;
-        font-variant-numeric: tabular-nums;
-      }
-
-      #scoreRow .score-cur {
-        color: #6b7c8a;
-        font-size: 16px;
-        font-weight: 800;
-        font-variant-numeric: tabular-nums;
-      }
-
-      #scoreRow .hp {
-        font-size: 15px;
-        margin-inline-start: 0;
-        flex-shrink: 0;
-      }
-
-      #scoreRow .hp.off {
-        opacity: 0.25;
-      }
-
-      /* Dil menüsü */
       #langWrap {
         position: relative;
       }
@@ -501,12 +467,19 @@
         position: absolute;
         top: calc(100% + 4px);
         right: 0;
-        background: linear-gradient(180deg, #fff8e7, #ffe9c4);
+        background: var(--bg);
+        border: 1px solid var(--fg);
         border-radius: 12px;
         padding: 6px;
         min-width: 150px;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
         z-index: 20;
+        transition:
+          background 0.3s,
+          border-color 0.3s;
+      }
+      :root[data-theme="dark"] #langMenu {
+        background: #2a2b2e;
+        border-color: rgba(255, 255, 255, 0.2);
       }
 
       html[dir="rtl"] #langMenu {
@@ -524,7 +497,7 @@
         gap: 10px;
         padding: 7px 10px;
         border-radius: 8px;
-        color: #2b2b2b;
+        color: var(--fg);
         font-size: 14px;
         cursor: pointer;
         font-family:
@@ -538,7 +511,7 @@
 
       .lang-item:hover,
       .lang-item.active {
-        background: rgba(0, 0, 0, 0.1);
+        background: rgba(128, 128, 128, 0.15);
       }
 
       .lang-item svg {
@@ -548,31 +521,16 @@
         flex-shrink: 0;
       }
 
-      #about {
-        position: fixed;
-        inset: 0;
-        z-index: 50;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-        background: rgba(0, 0, 0, 0.55);
-      }
-
-      #about[hidden] {
-        display: none;
-      }
-
       #aboutPanel {
         position: relative;
         width: min(92vw, 520px);
         max-height: 85vh;
         overflow-y: auto;
         padding: 20px;
-        background: linear-gradient(180deg, #fff8e7, #ffe9c4);
-        color: #1e4d6b;
+        background: var(--bg);
+        color: var(--fg);
+        border: 1px solid var(--fg);
         border-radius: 18px;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.55);
         font-family:
           system-ui,
           -apple-system,
@@ -588,13 +546,12 @@
         font-size: 22px;
         margin-bottom: 12px;
         text-align: center;
-        color: #1e4d6b;
       }
 
       #aboutPanel h3 {
         font-size: 16px;
         margin: 14px 0 6px;
-        color: #8a4b00;
+        opacity: 0.75;
       }
 
       #aboutPanel li {
@@ -617,7 +574,7 @@
       .copy-line {
         text-align: center;
         font-size: 12px;
-        color: #6b7c8a;
+        opacity: 0.6;
         margin-top: 4px;
       }
 
@@ -627,7 +584,7 @@
         inset-inline-end: 10px;
         background: transparent;
         border: 0;
-        color: #2b2b2b;
+        color: var(--fg);
         font-size: 20px;
         line-height: 1;
         padding: 6px;
@@ -635,60 +592,7 @@
       }
 
       #aboutClose:focus-visible {
-        outline: 2px solid #2b2b2b;
-      }
-
-      /* Mobil dikey - dar ekranlarda HUD küçült */
-      @media (max-width: 700px) and (orientation: portrait) {
-        .hud-btn {
-          min-width: 150px;
-          width: 150px;
-          max-width: 150px;
-          min-height: 40px;
-          font-size: 13px;
-          padding: 7px 10px;
-          box-sizing: border-box;
-        }
-
-        #scoreRow {
-          height: 40px;
-          max-height: 40px;
-          padding: 0 8px;
-          justify-content: center;
-          gap: 6px;
-        }
-
-        #scoreRow .hi-group {
-          margin-inline-end: 0;
-          gap: 3px;
-        }
-
-        #scoreRow .score-hi-label {
-          font-size: 13px;
-        }
-
-        #scoreRow .score-hi {
-          font-size: 14px;
-        }
-
-        #scoreRow .score-cur {
-          font-size: 14px;
-        }
-
-        #scoreRow .hp {
-          font-size: 12px;
-        }
-
-        #lives {
-          gap: 2px;
-          padding-inline-end: 0;
-        }
-
-        #resetConfirm {
-          min-width: 150px;
-          width: 150px;
-          max-width: 150px;
-        }
+        outline: 2px solid var(--fg);
       }
 
       /* Yatay modda HUD küçült */
@@ -704,16 +608,6 @@
 
         #topright {
           right: calc(14px + env(safe-area-inset-right, 0px));
-        }
-
-        html[dir="rtl"] #topleft {
-          left: auto;
-          right: calc(14px + env(safe-area-inset-right, 0px));
-        }
-
-        html[dir="rtl"] #topright {
-          right: auto;
-          left: calc(14px + env(safe-area-inset-left, 0px));
         }
 
         .hud-btn {
@@ -732,31 +626,39 @@
           height: 12px;
         }
 
+        #resetConfirm {
+          min-width: 150px;
+          width: 150px;
+          max-width: 150px;
+          font-size: 11px;
+          padding: 6px 8px;
+        }
+
         #scoreRow {
           height: 32px;
           max-height: 32px;
           padding: 0 8px;
         }
 
-        #scoreRow .hi-group {
-          margin-inline-end: 3px;
-        }
         #scoreRow .score-hi-label {
           font-size: 12px;
-          line-height: 1;
         }
-
         #scoreRow .score-hi,
         #scoreRow .score-cur {
           font-size: 12px;
         }
-
         #scoreRow .hp {
-          font-size: 11px;
+          width: 12px;
+          height: 12px;
         }
-
+        #scoreRow .hp svg {
+          width: 12px;
+          height: 12px;
+        }
         #langMenu {
           min-width: 130px;
+          width: 130px;
+          max-width: 130px;
           padding: 4px;
         }
 
@@ -769,6 +671,46 @@
         .lang-item svg {
           width: 18px;
           height: 12px;
+        }
+      }
+
+      /* Mobil yatay: orta yükseklik (400-600px arası) — butonları küçült */
+      @media (orientation: landscape) and (min-height: 401px) and (max-height: 600px) {
+        .hud-btn {
+          min-height: 28px;
+          width: 140px;
+          min-width: 140px;
+          max-width: 140px;
+          padding: 4px 8px;
+          font-size: 11px;
+          border-radius: 8px;
+        }
+
+        .hud-btn svg {
+          width: 16px;
+          height: 11px;
+        }
+
+        #scoreRow {
+          height: 28px;
+          max-height: 28px;
+          padding: 0 6px;
+        }
+
+        #scoreRow .score-hi-label {
+          font-size: 11px;
+        }
+        #scoreRow .score-hi,
+        #scoreRow .score-cur {
+          font-size: 11px;
+        }
+        #scoreRow .hp {
+          width: 11px;
+          height: 11px;
+        }
+        #scoreRow .hp svg {
+          width: 11px;
+          height: 11px;
         }
       }
 
@@ -801,19 +743,95 @@
         #scoreRow .hp {
           font-size: 10px;
         }
+        #scoreRow .hp {
+          width: 10px;
+          height: 10px;
+        }
+        #scoreRow .hp svg {
+          width: 10px;
+          height: 10px;
+        }
+      }
+
+      /* Mobil dikey - dar ekranlarda HUD küçült */
+      @media (max-width: 700px) and (orientation: portrait) {
+        .hud-btn {
+          min-width: 135px;
+          width: 135px;
+          max-width: 135px;
+          min-height: 36px;
+          font-size: 12px;
+          padding: 6px 10px;
+          box-sizing: border-box;
+        }
+
+        /* Skor satırı: 4 öğeyi kutuya ortalanmış sığdır */
+        #scoreRow {
+          height: 36px;
+          max-height: 36px;
+          padding: 0 6px;
+          gap: 3px;
+          overflow: hidden;
+          justify-content: space-between;
+        }
+
+        #scoreRow .hi-group {
+          margin-inline-end: 0;
+          gap: 2px;
+          flex-shrink: 0;
+        }
 
         #scoreRow .score-hi-label {
-          font-size: 10px;
+          font-size: 12px;
+          line-height: 1;
+        }
+
+        #scoreRow .score-hi {
+          font-size: 12px;
+          line-height: 1;
+          letter-spacing: 0.2px;
+        }
+
+        #scoreRow .score-cur {
+          font-size: 12px;
+          line-height: 1;
+          margin-inline-start: auto;
+          margin-inline-end: 2px;
+          flex-shrink: 0;
+        }
+
+        #scoreRow .hp {
+          width: 12px;
+          height: 12px;
+        }
+
+        #scoreRow .hp svg {
+          width: 12px;
+          height: 12px;
+        }
+
+        #lives {
+          gap: 2px;
+          padding-inline-end: 0;
+          flex-shrink: 0;
+          justify-content: center;
+        }
+
+        #resetConfirm {
+          min-width: 150px;
+          width: 150px;
+          max-width: 150px;
         }
       }
       /* ===== ESKİ CİHAZ DÜZELTMESİ (JS ile tespit edilir) ===== */
+      /* Sadece flex gap desteklemeyen cihazlarda aktif olur (iPad Mini 2 vb.) */
       html.no-flex-gap .hud-btn {
-        min-width: 130px;
-        width: 130px;
-        max-width: 130px;
-        font-size: 11px;
-        padding: 5px 6px;
-        min-height: 34px;
+        min-width: 150px;
+        width: 150px;
+        max-width: 150px;
+        font-size: 13px;       /* Fontu 12'den 13'e çıkardık */
+        padding: 9px 10px;     /* İç boşluğu 6px 8px'ten 9px 10px'e çıkardık → kutu boyu uzar */
+        min-height: 42px;      /* Minimum yüksekliği 36'dan 42'ye çıkardık */
       }
       html.no-flex-gap .hud-btn > * + * {
         margin-left: 4px;
@@ -822,7 +840,7 @@
         flex-shrink: 0;
       }
 
-      /* Skor satırı */
+      /* Skor satırı: taşmadan sığdır */
       html.no-flex-gap #scoreRow {
         justify-content: center;
         flex-wrap: nowrap;
@@ -830,16 +848,15 @@
         padding: 0 2px;
         height: 34px;
         max-height: 34px;
+        gap: 0;
       }
       html.no-flex-gap #scoreRow .hi-group {
         margin-right: 3px;
         flex-shrink: 0;
+        gap: 0;
       }
       html.no-flex-gap #scoreRow .hi-group > * + * {
         margin-left: 2px;
-      }
-      html.no-flex-gap #scoreRow .hp + .hp {
-        margin-left: 1px;
       }
       html.no-flex-gap #scoreRow .score-hi-label,
       html.no-flex-gap #scoreRow .score-hi,
@@ -853,13 +870,36 @@
       html.no-flex-gap #scoreRow .score-hi-label { font-size: 11px; }
       html.no-flex-gap #scoreRow .score-hi      { font-size: 10px; letter-spacing: 0; margin-left: 1px; }
       html.no-flex-gap #scoreRow .score-cur     { font-size: 10px; margin: 0 1px; }
-      html.no-flex-gap #scoreRow .hp            { font-size: 10px; }
 
-      /* Dil menüsü */
-      html.no-flex-gap .lang-item .flag,
+      /* Canlar (SVG dino silüetleri) */
+      html.no-flex-gap #lives {
+        display: inline-flex;
+        align-items: center;
+        gap: 1px;
+        flex-shrink: 0;
+        padding-inline-end: 0;
+      }
+      html.no-flex-gap #scoreRow .hp {
+        width: 11px;
+        height: 11px;
+        margin: 0;
+      }
+      html.no-flex-gap #scoreRow .hp svg {
+        width: 11px;
+        height: 11px;
+      }
+
+      /* Dil menüsü: bayrak ve yazı ayrık */
+      html.no-flex-gap .lang-item {
+        gap: 0;
+        padding: 7px 10px;     
+        font-size: 13px;       
+      }
       html.no-flex-gap .lang-item svg {
         flex-shrink: 0;
         margin-right: 8px;
+        width: 18px;
+        height: 12px;
         display: inline-block;
         vertical-align: middle;
       }
@@ -870,61 +910,59 @@
         vertical-align: middle;
       }
       html.no-flex-gap #langMenu {
-        min-width: 110px;
-      }
-      html.no-flex-gap .lang-item {
-        padding: 4px 6px;
-        font-size: 11px;
-      }
-      html.no-flex-gap .lang-item svg {
-        width: 18px;
-        height: 12px;
+        min-width: 150px;      /* 110'dan 150'ye çıkardık */
+        padding: 6px;          /* 4'ten 6'ya çıkardık */
       }
 
       /* Reset menüsü */
+      html.no-flex-gap #resetConfirm {
+        gap: 0;
+      }
       html.no-flex-gap #resetConfirm > * + * {
         margin-top: 6px;
       }
       html.no-flex-gap #resetConfirm .btn-row {
         justify-content: center;
+        gap: 0;
       }
       html.no-flex-gap #resetConfirm .btn-row > * + * {
         margin-left: 4px;
       }
 
-      /* Mesaj / "Duraklatıldı" tam ortalansın, taşmasın */
-      html.no-flex-gap #card {
-        padding: 10px 4px;
-        max-width: 94vw;
-        width: 94vw;
-        left: 3vw;
-        right: 3vw;
-        top: 50%;
-        transform: translateY(-50%);
-      }
+      /* Mesaj / "Duraklatıldı" ve başlangıç yazısı: dikeyde ortada, taşmadan */
       html.no-flex-gap #msg {
-        max-width: 100%;
-        width: 100%;
-        padding: 0 2px;
+        max-width: 92vw;
+        width: 92vw;
+        left: 4vw;
+        right: 4vw;
+        transform: translateY(-50%);
+        top: 50%;
+        padding: 0 8px;
         text-align: center;
         white-space: normal;
         overflow-wrap: break-word;
         word-break: break-word;
         line-height: 1.3;
-        margin: 0 auto;
-        font-size: 14px; /* Yazıyı biraz küçült ki kesilmesin */
+        font-size: 14px;
+        margin: 0;
       }
-      html.no-flex-gap #wrap {
-        justify-content: center;
+      /* Dikey mobilde üstte konumlanmasın, tam ortada olsun */
+      @media (orientation: portrait) and (max-width: 700px) {
+        html.no-flex-gap #msg {
+          top: 50%;
+          left: 4vw;
+          right: 4vw;
+          transform: translateY(-50%);
+        }
       }
       /* ===== RTL (Arapça) + ESKİ CİHAZ DÜZELTMESİ ===== */
       /* html[dir="rtl"] + no-flex-gap kombinasyonunda öğeleri düzelt */
       html.no-flex-gap[dir="rtl"] #scoreRow {
-        justify-content: center;
+        justify-content: center;   /* RTL'de space-between yerine ortalama */
         gap: 0;
       }
       html.no-flex-gap[dir="rtl"] #scoreRow .hi-group {
-        margin-right: 0;
+        margin-right: 0;           /* RTL'de margin-right: 3px yerine */
         margin-left: 3px;
       }
       html.no-flex-gap[dir="rtl"] #scoreRow .hi-group > * + * {
@@ -937,7 +975,6 @@
         margin-right: 1px;
       }
       /* Dil menüsü: bayrak sağda, yazı solda olacak şekilde */
-      html.no-flex-gap[dir="rtl"] .lang-item .flag,
       html.no-flex-gap[dir="rtl"] .lang-item svg {
         margin-right: 0;
         margin-left: 8px;
@@ -953,7 +990,8 @@
         margin-right: 4px;
       }
       /* ===== ESKİ CİHAZ: About penceresi düzeltmesi ===== */
-      /* iPad Mini 2'de position:fixed ve inset sorununu giderir */
+      /* iPad Mini 2'de position:fixed ve inset sorununu giderir.
+         display: flex sadece hidden yokken uygulanacak → açılışta gizli kalır. */
       html.no-flex-gap #about {
         top: 0;
         left: 0;
@@ -967,9 +1005,12 @@
         padding: 16px;
         box-sizing: border-box;
       }
-      /* display: flex sadece hidden YOKKEN uygulanacak */
       html.no-flex-gap #about:not([hidden]) {
         display: flex;
+      }
+      /* hidden iken kesinlikle gizle (temel kuralı garantiye al) */
+      html.no-flex-gap #about[hidden] {
+        display: none !important;
       }
       html.no-flex-gap #aboutPanel {
         margin: auto;
@@ -981,11 +1022,9 @@
 
   <body>
     <div id="wrap">
-      <canvas id="game" width="600" height="300"></canvas>
-      <div id="card" class="off">
-        <div id="cardScore"></div>
-        <div id="msg" dir="auto"></div>
-        <div id="cardBtn" role="button" aria-label="Play">▶</div>
+      <canvas id="game" width="600" height="150"></canvas>
+      <div id="msg" dir="auto">
+        Başlamak için BOŞLUK tuşuna bas veya ekrana dokun
       </div>
     </div>
     <div class="hud" id="topleft">
@@ -997,8 +1036,8 @@
         <span class="score-cur" id="cur">0000</span>
         <span id="lives"></span>
       </div>
-      <button class="hud-btn" id="restartBtn" type="button">
-        🔄 <span id="restartText"></span>
+      <button class="hud-btn" id="resetBtn" type="button">
+        🔄 <span id="resetText"></span>
       </button>
       <button class="hud-btn" id="pauseBtn" type="button" disabled>
         <span id="pauseIcon">⏸</span> <span id="pauseText"></span>
@@ -1011,6 +1050,7 @@
         </div>
       </div>
     </div>
+
     <div class="hud" id="topright">
       <div id="langWrap">
         <button
@@ -1022,7 +1062,7 @@
         ></button>
         <div id="langMenu" role="listbox"></div>
       </div>
-      <button class="hud-btn" type="button" id="soundBtn" aria-label="Sound">
+      <button class="hud-btn" type="button" id="soundBtn">
         <span id="soundIcon">🔊</span> <span id="soundText"></span>
       </button>
       <button class="hud-btn" type="button" id="aboutBtn">
@@ -1049,7 +1089,7 @@
 
     <script>
       (function () {
-        const STORAGE_KEY = "kangurun_high_score_v1";
+        const STORAGE_KEY = "dino_high_score_shared_v2";
         const DEFAULT_HIGH = 0;
 
         function loadHigh() {
@@ -1063,129 +1103,29 @@
             return DEFAULT_HIGH;
           }
         }
-
         function saveHigh(val) {
           try {
             localStorage.setItem(STORAGE_KEY, String(val));
           } catch (e) {}
         }
-
         let highScore = loadHigh();
-        let soundOn = true;
-        try {
-          soundOn = localStorage.getItem("kangu_sound") !== "0";
-        } catch (e) {}
 
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
         const RENDER_SCALE = 4.3;
-        let VW = 600,
-          VH = 150,
-          narrowMode = null; // mantıksal tuval boyutu
-        function fitCanvas() {
-          const narrow = window.innerWidth < 700;
-          narrowMode = narrow;
-
-          // Gerçek safe-area değerlerini ölç (CSS env() bazen 0 döner)
-          const probe = document.createElement("div");
-          probe.style.cssText =
-            "position:fixed;top:0;left:0;width:env(safe-area-inset-left,0px);height:env(safe-area-inset-top,0px);pointer-events:none;visibility:hidden;";
-          document.body.appendChild(probe);
-          const saL = probe.offsetWidth || 0;
-          const saT = probe.offsetHeight || 0;
-          document.body.removeChild(probe);
-
-          // Mobil yatayda HUD'u kesin içeri çek (safe-area + minimum 14px)
-          const isLandscape = window.innerWidth > window.innerHeight;
-          if (narrow && isLandscape) {
-            const pad = Math.max(saL + 14, 14);
-            document.getElementById("topleft").style.left = pad + "px";
-            document.getElementById("topright").style.right = pad + "px";
-          } else {
-            document.getElementById("topleft").style.left = "";
-            document.getElementById("topright").style.right = "";
-          }
-
-          // ===== TÜM EKRANLARDA: TAM EKRAN OYUN =====
-          // Canvas konumu ve boyutu tamamen CSS'te tanımlı (left/top/transform/width/height).
-          // JS sadece iç çözünürlüğü ve VW/VH'yi ayarlar.
-          const cssW = window.innerWidth;
-          const cssH = window.innerHeight;
-          const aspect = cssW / cssH;
-
-          // ===== DİKEY MOBİL (portrait): özel strateji =====
-          if (aspect < 0.85 && cssW < 700) {
-            VW = 300;
-            VH = Math.round(VW / aspect);
-            const maxVH = Math.round(VW / 0.55);
-            if (VH > maxVH) VH = maxVH;
-          } else {
-            // ===== YATAY / MASAÜSTÜ: dinamik VH =====
-            let dinoTargetPx;
-            if (cssH < 500) {
-              dinoTargetPx = 44;
-            } else if (cssH < 800) {
-              dinoTargetPx = 46;
-            } else if (cssH < 1200) {
-              dinoTargetPx = 52;
-            } else {
-              dinoTargetPx = 60;
-            }
-            // Kanguru FOOT=36 birim → 36 birim hedef piksele denk gelsin
-            VH = Math.round(cssH / (dinoTargetPx / 36));
-            VW = Math.round(VH * aspect);
-            if (VW > 900) VW = 900;
-            if (VW < 360) VW = 360;
-          }
-
-          canvas.width = VW * RENDER_SCALE;
-          canvas.height = VH * RENDER_SCALE;
-
-          // Dikey mobil ve masaüstünde 0.67, mobil yatayda 0.86
-          const isPortraitMobile = cssW / cssH < 0.85 && cssW < 700;
-          const isMobileLandscape =
-            !isPortraitMobile && aspect > 1.5 && cssH < 600;
-          const groundRatio = isMobileLandscape ? 0.86 : 0.67;
-          GROUND_LINE = Math.round(VH * groundRatio);
-          GROUND_Y = GROUND_LINE - FOOT;
-
-          if (dino) {
-            dino.y = GROUND_Y;
-            dino.x = Math.round(VW * DINO_X_RATIO);
-          }
-          // Obstacle'ların y değerlerini yeni GROUND_LINE'a göre güncelle
-          for (const o of obstacles) {
-            if (o.type === "emu") o.y = GROUND_LINE - 45;
-            else if (o.type === "tree" && o.cluster) o.y = GROUND_LINE - 54;
-            else if (o.type === "tree" && o.h === 50) o.y = GROUND_LINE - 50;
-            else if (o.type === "tree") o.y = GROUND_LINE - 45;
-            else if (o.type === "rock" && o.h === 30) o.y = GROUND_LINE - 30;
-            else if (o.type === "rock") o.y = GROUND_LINE - 25;
-          }
-
-          // GROUND_LINE değişti → yıldızları yeniden dağıt (dağlarla çakışmasın)
-          initStars();
-
-          draw();
-        }
-        window.addEventListener("resize", fitCanvas);
-        window.addEventListener("orientationchange", () =>
-          setTimeout(fitCanvas, 150),
-        );
         const curEl = document.getElementById("cur");
         const msgEl = document.getElementById("msg");
 
         function pad(n) {
-          return String(Math.min(9999, Math.floor(n))).padStart(4, "0");
+          return String(Math.floor(n) % 10000).padStart(4, "0");
         }
-        const GAME_NAME = "KanguRun";
 
         const LANGS = [
           {
             code: "TR",
             html: "tr",
             name: "Türkçe",
-            title: "KanguRun",
+            title: "DinoRun",
             hi: "Rekor",
             dev: "Geliştirici",
             start: "Başlamak için BOŞLUK tuşuna bas veya ekrana dokun",
@@ -1196,7 +1136,7 @@
             code: "US",
             html: "en",
             name: "English",
-            title: "KanguRun",
+            title: "DinoRun",
             hi: "Record",
             dev: "Developer",
             start: "Press SPACE or tap the screen to start",
@@ -1207,7 +1147,7 @@
             code: "ES",
             html: "es",
             name: "Español",
-            title: "KanguRun",
+            title: "DinoRun",
             hi: "Récord",
             dev: "Desarrollador",
             start: "Pulsa ESPACIO o toca la pantalla para empezar",
@@ -1218,7 +1158,7 @@
             code: "FR",
             html: "fr",
             name: "Français",
-            title: "KanguRun",
+            title: "DinoRun",
             hi: "Record",
             dev: "Développeur",
             start: "Appuie sur ESPACE ou touche l'écran pour commencer",
@@ -1229,7 +1169,7 @@
             code: "DE",
             html: "de",
             name: "Deutsch",
-            title: "KanguRun",
+            title: "DinoRun",
             hi: "Rekord",
             dev: "Entwickler",
             start: "Drücke LEERTASTE oder tippe auf den Bildschirm zum Starten",
@@ -1240,7 +1180,7 @@
             code: "IT",
             html: "it",
             name: "Italiano",
-            title: "KanguRun",
+            title: "DinoRun",
             hi: "Record",
             dev: "Sviluppatore",
             start: "Premi SPAZIO o tocca lo schermo per iniziare",
@@ -1251,7 +1191,7 @@
             code: "BR",
             html: "pt-BR",
             name: "Português",
-            title: "KanguRun",
+            title: "DinoRun",
             hi: "Recorde",
             dev: "Desenvolvedor",
             start: "Pressione ESPAÇO ou toque na tela para começar",
@@ -1262,7 +1202,7 @@
             code: "AR",
             html: "ar",
             name: "العربية",
-            title: "KanguRun",
+            title: "DinoRun",
             hi: "الأعلى",
             dev: "المطور",
             start: "اضغط على المسافة أو المس الشاشة للبدء",
@@ -1273,7 +1213,7 @@
             code: "RU",
             html: "ru",
             name: "Русский",
-            title: "KanguRun",
+            title: "DinoRun",
             hi: "Рекорд",
             dev: "Разработчик",
             start: "Нажми ПРОБЕЛ или коснись экрана, чтобы начать",
@@ -1284,7 +1224,7 @@
             code: "CN",
             html: "zh-CN",
             name: "中文",
-            title: "KanguRun",
+            title: "DinoRun",
             hi: "最高分",
             dev: "开发者",
             start: "按空格键或点击屏幕开始",
@@ -1300,16 +1240,14 @@
             paused: "Duraklatıldı",
             about: "Oyun Hakkında",
             how: "Nasıl Oynanır",
-            restart: "Yeniden Başlat",
             sound: "Sesi Kapat",
             soundOn: "Sesi Aç",
-            close: "Kapat",
             rights: "Tüm hakları saklıdır.",
             tips: [
               "Boşluk veya ↑ tuşuyla zıpla; dokunmatik ekranda ekrana dokun.",
-              "Okaliptüs ağaçlarının, kayaların ve emuların üzerinden atla.",
+              "Kaktüslerden ve kuşlardan zıplayarak kaç.",
               "İki canın var: ilk çarpışmada bir can kaybedersin, ikincisinde oyun biter.",
-              "Rekorun bu tarayıcıda saklanır; her 500 puanda gece ve gündüz değişir.",
+              "Her 500 puanda gece ve gündüz değişir. Rekorun bu tarayıcıda saklanır.",
             ],
           },
           US: {
@@ -1318,16 +1256,14 @@
             paused: "Paused",
             about: "About the Game",
             how: "How to Play",
-            restart: "Restart",
             sound: "Mute",
             soundOn: "Unmute",
-            close: "Close",
             rights: "All rights reserved.",
             tips: [
               "Jump with the Space or ↑ key; tap the screen on touch devices.",
-              "Leap over gum trees, rocks and emus.",
+              "Leap over cacti and birds.",
               "You have two lives: the first hit costs one life, the second ends the game.",
-              "Your high score is saved in this browser; day and night switch every 500 points.",
+              "Day and night switch every 500 points. Your high score is saved in this browser.",
             ],
           },
           ES: {
@@ -1336,16 +1272,14 @@
             paused: "En Pausa",
             about: "Acerca del Juego",
             how: "Cómo Jugar",
-            restart: "Reiniciar",
             sound: "Silenciar",
             soundOn: "Activar Sonido",
-            close: "Cerrar",
             rights: "Todos los derechos reservados.",
             tips: [
               "Salta con la tecla Espacio o ↑; toca la pantalla en dispositivos táctiles.",
-              "Salta sobre eucaliptos, rocas y emús.",
+              "Salta sobre cactus y pájaros.",
               "Tienes dos vidas: el primer golpe cuesta una vida, el segundo termina el juego.",
-              "Tu récord se guarda en este navegador; cada 500 puntos cambia el día y la noche.",
+              "Cada 500 puntos cambia el día y la noche. Tu récord se guarda en este navegador.",
             ],
           },
           FR: {
@@ -1354,16 +1288,14 @@
             paused: "En Pause",
             about: "À Propos du Jeu",
             how: "Comment Jouer",
-            restart: "Redémarrer",
             sound: "Couper le Son",
             soundOn: "Activer le Son",
-            close: "Fermer",
             rights: "Tous droits réservés.",
             tips: [
               "Saute avec la touche Espace ou ↑ ; touche l'écran sur mobile.",
-              "Saute par-dessus les eucalyptus, les rochers et les émeus.",
+              "Saute par-dessus les cactus et les oiseaux.",
               "Tu as deux vies : le premier choc coûte une vie, le second termine la partie.",
-              "Ton record est enregistré dans ce navigateur ; le jour et la nuit alternent tous les 500 points.",
+              "Le jour et la nuit alternent tous les 500 points. Ton record est enregistré dans ce navigateur.",
             ],
           },
           DE: {
@@ -1372,16 +1304,14 @@
             paused: "Pausiert",
             about: "Über das Spiel",
             how: "Spielanleitung",
-            restart: "Neustart",
             sound: "Ton Aus",
             soundOn: "Ton An",
-            close: "Schließen",
             rights: "Alle Rechte vorbehalten.",
             tips: [
               "Springe mit der Leertaste oder ↑; tippe auf dem Handy auf den Bildschirm.",
-              "Spring über Eukalyptusbäume, Felsen und Emus.",
+              "Spring über Kakteen und Vögel.",
               "Du hast zwei Leben: Der erste Treffer kostet ein Leben, der zweite beendet das Spiel.",
-              "Dein Rekord wird in diesem Browser gespeichert; alle 500 Punkte wechseln Tag und Nacht.",
+              "Alle 500 Punkte wechseln Tag und Nacht. Dein Rekord wird in diesem Browser gespeichert.",
             ],
           },
           IT: {
@@ -1390,16 +1320,14 @@
             paused: "In Pausa",
             about: "Info sul Gioco",
             how: "Come si Gioca",
-            restart: "Ricomincia",
             sound: "Disattiva Audio",
             soundOn: "Attiva Audio",
-            close: "Chiudi",
             rights: "Tutti i diritti riservati.",
             tips: [
               "Salta con il tasto Spazio o ↑; tocca lo schermo sui dispositivi touch.",
-              "Salta sopra eucalipti, rocce ed emù.",
+              "Salta sopra cactus e uccelli.",
               "Hai due vite: il primo urto costa una vita, il secondo termina la partita.",
-              "Il tuo record è salvato in questo browser; ogni 500 punti si alternano giorno e notte.",
+              "Ogni 500 punti si alternano giorno e notte. Il tuo record è salvato in questo browser.",
             ],
           },
           BR: {
@@ -1408,16 +1336,14 @@
             paused: "Pausado",
             about: "Sobre o Jogo",
             how: "Como Jogar",
-            restart: "Reiniciar",
             sound: "Desativar Som",
             soundOn: "Ativar Som",
-            close: "Fechar",
             rights: "Todos os direitos reservados.",
             tips: [
               "Pule com a tecla Espaço ou ↑; toque na tela em dispositivos móveis.",
-              "Pule sobre eucaliptos, pedras e emas.",
+              "Pule sobre cactos e pássaros.",
               "Você tem duas vidas: a primeira batida custa uma vida, a segunda termina o jogo.",
-              "Seu recorde fica salvo neste navegador; a cada 500 pontos alterna entre dia e noite.",
+              "A cada 500 pontos alterna entre dia e noite. Seu recorde fica salvo neste navegador.",
             ],
           },
           AR: {
@@ -1426,14 +1352,12 @@
             paused: "متوقفة مؤقتًا",
             about: "حول اللعبة",
             how: "طريقة اللعب",
-            restart: "إعادة البدء",
             sound: "كتم الصوت",
             soundOn: "تشغيل الصوت",
-            close: "إغلاق",
             rights: "جميع الحقوق محفوظة.",
             tips: [
               "اقفز بمفتاح المسافة أو ↑، والمس الشاشة على الأجهزة اللمسية.",
-              "اقفز فوق أشجار الأوكالبتوس والصخور والإيمو.",
+              "اقفز فوق الصبار والطيور.",
               "لديك حياتان: الاصطدام الأول يكلفك حياة، والثاني ينهي اللعبة.",
               "يُحفظ رقمك القياسي في هذا المتصفح، ويتبدل الليل والنهار كل 500 نقطة.",
             ],
@@ -1444,14 +1368,12 @@
             paused: "На Паузе",
             about: "Об Игре",
             how: "Как Играть",
-            restart: "Заново",
             sound: "Выключить Звук",
             soundOn: "Включить Звук",
-            close: "Закрыть",
             rights: "Все права защищены.",
             tips: [
               "Прыгай пробелом или ↑, на телефоне коснись экрана.",
-              "Перепрыгивай эвкалипты, камни и эму.",
+              "Перепрыгивай кактусы и птиц.",
               "У тебя две жизни: первое столкновение отнимает жизнь, второе заканчивает игру.",
               "Рекорд сохраняется в этом браузере; каждые 500 очков день сменяется ночью.",
             ],
@@ -1462,20 +1384,19 @@
             paused: "已暂停",
             about: "关于游戏",
             how: "玩法",
-            restart: "重新开始",
             sound: "关闭声音",
             soundOn: "开启声音",
-            close: "关闭",
             rights: "版权所有。",
             tips: [
               "按空格键或 ↑ 键跳跃，触屏设备点击屏幕。",
-              "跳过桉树、岩石和鸸鹋。",
+              "跳过仙人掌和飞鸟。",
               "你有两条命：第一次碰撞失去一条命，第二次碰撞游戏结束。",
               "最高分保存在此浏览器中，每 500 分昼夜交替。",
             ],
           },
         };
         LANGS.forEach((l) => Object.assign(l, EXTRA[l.code]));
+
         const RESET = {
           TR: {
             reset: "Yeniden Başlat",
@@ -1643,18 +1564,20 @@
         const aboutClose = document.getElementById("aboutClose");
         const langBtn = document.getElementById("langBtn");
         const langMenu = document.getElementById("langMenu");
-        const restartBtn = document.getElementById("restartBtn");
+        const resetBtn = document.getElementById("resetBtn");
         const resetConfirm = document.getElementById("resetConfirm");
         const resetAsk = document.getElementById("resetAsk");
         const resetYes = document.getElementById("resetYes");
         const resetNo = document.getElementById("resetNo");
         let menuOpen = false;
+        let confirmOpen = false;
         let aboutOpen = false;
         let paused = false;
         let msgKey = "start";
+
         function detectLang() {
           try {
-            const saved = localStorage.getItem("kangurun_lang");
+            const saved = localStorage.getItem("dino_lang");
             const f = LANGS.find((l) => l.code === saved);
             if (f) return f;
           } catch (e) {}
@@ -1678,1139 +1601,24 @@
           );
         }
         let lang = detectLang();
-        function updateHi() {
-          const labelEl = document.getElementById("hiLabel");
-          const valueEl = document.getElementById("hiValue");
-          if (labelEl) labelEl.textContent = "🏆";
-          if (valueEl) valueEl.textContent = pad(highScore);
+
+        // Tema renkleri — data-theme değişince güncellenir
+        let themeFg = "#202124";
+        let themeBg = "#f7f7f7";
+        function refreshThemeColors() {
+          const cs = getComputedStyle(document.documentElement);
+          const fg = cs.getPropertyValue("--fg").trim();
+          const bg = cs.getPropertyValue("--bg").trim();
+          if (fg) themeFg = fg;
+          if (bg) themeBg = bg;
         }
-        function renderMsg() {
-          msgEl.textContent = msgKey ? lang[msgKey] : "";
-          renderCard();
-        }
-        function setMsg(k) {
-          msgKey = k;
-          renderMsg();
-        }
-
-        function applyLang() {
-          document.documentElement.lang = lang.html;
-          document.documentElement.dir = lang.code === "AR" ? "rtl" : "ltr";
-          document.title = GAME_NAME;
-
-          document.getElementById("restartText").textContent =
-            RESET[lang.code].reset;
-          document.getElementById("pauseText").textContent = paused
-            ? lang.resume
-            : lang.pause;
-          document.getElementById("pauseIcon").textContent = paused ? "▶" : "⏸";
-          document.getElementById("aboutBtnText").textContent = lang.about;
-
-          // Ses butonu metni (dil değişince güncellenir)
-          const sIcon = document.getElementById("soundIcon");
-          const sText = document.getElementById("soundText");
-          if (sIcon && sText) {
-            sIcon.textContent = soundOn ? "🔊" : "🔇";
-            sText.textContent = soundOn ? lang.sound : lang.soundOn;
-          }
-
-          aboutTitle.textContent = lang.about;
-          aboutHow.textContent = lang.how;
-          aboutList.innerHTML = "";
-          lang.tips.forEach((t) => {
-            const li = document.createElement("li");
-            li.textContent = t;
-            aboutList.appendChild(li);
-          });
-          aboutDev.textContent = lang.dev + ": A.EMRE CANASLAN";
-          aboutRights.textContent = "© 2026 " + lang.rights;
-
-          langBtn.innerHTML =
-            flagHtml(lang.code) + "<span>" + lang.code + "</span>";
-          langMenu
-            .querySelectorAll(".lang-item")
-            .forEach((b) =>
-              b.classList.toggle("active", b.dataset.code === lang.code),
-            );
-
-          const R = RESET[lang.code];
-          resetAsk.textContent = R.ask;
-          resetYes.textContent = R.yes;
-          resetNo.textContent = R.no;
-
-          updateHi();
-          renderMsg();
-        }
-        function setLang(l) {
-          lang = l;
-          try {
-            localStorage.setItem("kangurun_lang", l.code);
-          } catch (e) {}
-          applyLang();
-        }
-        function openMenu() {
-          menuOpen = true;
-          langMenu.classList.add("open");
-          langBtn.setAttribute("aria-expanded", "true");
-        }
-        function closeMenu() {
-          menuOpen = false;
-          langMenu.classList.remove("open");
-          langBtn.setAttribute("aria-expanded", "false");
-        }
-
-        LANGS.forEach((l) => {
-          const b = document.createElement("div");
-          b.className = "lang-item";
-          b.setAttribute("role", "option");
-          b.dataset.code = l.code;
-          b.innerHTML = flagHtml(l.code) + "<span>" + l.name + "</span>";
-          b.addEventListener("click", (e) => {
-            e.stopPropagation();
-            setLang(l);
-            closeMenu();
-          });
-          langMenu.appendChild(b);
-        });
-
-        langBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          menuOpen ? closeMenu() : openMenu();
-        });
-
-        document.addEventListener("click", closeMenu);
-
-        function syncPause() {
-          pauseBtn.disabled = !running;
-          document.getElementById("pauseText").textContent = paused
-            ? lang.resume
-            : lang.pause;
-          document.getElementById("pauseIcon").textContent = paused ? "▶" : "⏸";
-        }
-        function setPaused(v) {
-          if (v && !running) return;
-          paused = v;
-          setMsg(v ? "paused" : "");
-          syncPause();
-          if (v) stopMusic();
-          else if (running) startMusic();
-        }
-        pauseBtn.addEventListener("click", () => {
-          setPaused(!paused);
-          pauseBtn.blur();
-        });
-
-        function openAbout() {
-          aboutOpen = true;
-          aboutEl.hidden = false;
-          aboutClose.focus();
-        }
-        function closeAbout() {
-          aboutOpen = false;
-          aboutEl.hidden = true;
-          if (document.activeElement && document.activeElement.blur)
-            document.activeElement.blur();
-        }
-        aboutBtn.addEventListener("click", openAbout);
-        aboutClose.addEventListener("click", closeAbout);
-        aboutEl.addEventListener("click", (e) => {
-          if (e.target === aboutEl) closeAbout();
-        });
-        document.addEventListener("keydown", (e) => {
-          if (!aboutOpen) return;
-          if (e.key === "Escape") closeAbout();
-          else if (e.key === "Tab") {
-            e.preventDefault();
-            aboutClose.focus();
-          }
-        });
-
-        function openResetConfirm() {
-          resetConfirm.hidden = false;
-          resetNo.focus();
-        }
-        function closeResetConfirm() {
-          resetConfirm.hidden = true;
-          if (
-            document.activeElement &&
-            document.activeElement.closest &&
-            document.activeElement.closest("#topleft")
-          )
-            document.activeElement.blur();
-        }
-        function doReset() {
-          highScore = 0;
-          try {
-            localStorage.removeItem(STORAGE_KEY);
-          } catch (e) {}
-          reset();
-          running = false;
-          paused = false;
-          syncPause();
-          updateHi();
-          setMsg("start");
-          closeResetConfirm();
-        }
-        restartBtn.addEventListener("click", () => {
-          if (resetConfirm.hidden) openResetConfirm();
-          else closeResetConfirm();
-        });
-        resetYes.addEventListener("click", doReset);
-        resetNo.addEventListener("click", closeResetConfirm);
-        document.getElementById("topleft").addEventListener("keydown", (e) => {
-          if (e.key === "Escape") closeResetConfirm();
-        });
-
-        applyLang();
-        const FOOT = 36;
-        const DINO_X_RATIO = 0.15;
-        let GROUND_Y = 118;
-        let GROUND_LINE = GROUND_Y + FOOT;
-        // Zıplama: tepe yüksekliği ~140 birim (en yüksek ağaç 54'ün çok üstünde)
-        // v² / (2g) = 13.0² / (2×0.6) ≈ 140.8 birim
-        const GRAVITY = 0.6;
-        const JUMP_V = -13.0;
-
-        let dino = {
-          x: 30,
-          y: GROUND_Y,
-          vy: 0,
-          w: 22,
-          h: FOOT,
-          jumping: false,
-        };
-        let obstacles = [];
-        let speed = 5;
-        let score = 0;
-        let running = false;
-        let frame = 0;
-        let animFrame = 0;
-        let lives = 2;
-        let invuln = 0;
-        const livesEl = document.getElementById("lives");
-        function renderLives() {
-          let h = "";
-          for (let i = 0; i < 2; i++)
-            h += '<span class="hp' + (i < lives ? "" : " off") + '">🦘</span>';
-          livesEl.innerHTML = h;
-        }
-
-        function reset() {
-          dino.x = Math.round(VW * DINO_X_RATIO);
-          dino.y = GROUND_Y;
-          dino.vy = 0;
-          dino.jumping = false;
-          obstacles = [];
-          speed = 5;
-          score = 0;
-          frame = 0;
-          nextSpawnFrame = 60;
-          isNight = false;
-          lives = 2;
-          invuln = 0;
-          dust = [];
-          takeoff = 0;
-          landing = 0;
-          nightT = 0;
-          document.documentElement.setAttribute("data-theme", "light");
-          renderLives();
-          initStars();
-        }
-
-        function jump() {
-          if (paused) return;
-          if (!running) {
-            startGame();
-            return;
-          }
-          if (!dino.jumping) {
-            dino.vy = JUMP_V;
-            dino.jumping = true;
-            takeoff = 6;
-            sfx.jump();
-          }
-        }
-
-        // Sabit zıplama: tuş bırakma etkisi yok
-        function releaseJump() {
-          // Boş — DinoRun gibi sabit zıplama
-        }
-
-        function startGame() {
-          reset();
-          sfx.start();
-          running = true;
-          paused = false;
-          syncPause();
-          setMsg("");
-          startMusic();
-        }
-
-        let groundOffset = 0;
-        let nightT = 0,
-          hillFar = 0,
-          hillNear = 0; // gece geçişi (0-1) ve paralaks kaydırma
-        let dust = [],
-          takeoff = 0,
-          landing = 0;
-        const CLOUD_TYPES = [
-          [
-            [0.15, 0.05, 0.24],
-            [0.45, -0.08, 0.28],
-            [0.75, 0.05, 0.22],
-            [-0.15, 0.15, 0.18],
-            [1.0, 0.15, 0.18],
-          ],
-        ];
-        const clouds = [
-          { x: 90, y: 60, w: 50, type: 0, speed: 1.0, layer: 0 },
-          { x: 300, y: 80, w: 42, type: 0, speed: 0.9, layer: 0 },
-          { x: 150, y: 40, w: 36, type: 0, speed: 0.6, layer: 1 },
-          { x: 440, y: 50, w: 40, type: 0, speed: 0.7, layer: 1 },
-        ];
-        let isNight = false;
-        let stars = [];
-
-        function initStars() {
-          stars = [];
-          // Dağların en üst noktasını hesapla → yıldızlar daima onun üstünde kalsın.
-          // Uzak dağ: base = GROUND_LINE - 66, amp = 36, max = base - amp*1.4
-          // Yakın dağ: base = GROUND_LINE - 30, amp = 27, max = base - amp*1.4
-          const farTop = GROUND_LINE - 66 - 36 * 1.4; // = GROUND_LINE - 116.4
-          const nearTop = GROUND_LINE - 30 - 27 * 1.4; // = GROUND_LINE - 67.8
-          const highestHill = Math.min(farTop, nearTop); // en yüksek dağ tepesi
-          // Güvenlik payı: dağ tepesinin en az 25 birim üstünde bitsin
-          // Alt sınır: 25 (çok dar ekranlarda bile en az 25 birimlik yıldız bandı)
-          const skyMax = Math.max(25, highestHill - 25);
-
-          for (let i = 0; i < 200; i++) {
-            stars.push({
-              x: Math.random() * VW,
-              y: 8 + Math.random() * skyMax,
-              phase: Math.random() * Math.PI * 2,
-              size: Math.random() < 0.25 ? 2 : 1,
-            });
-          }
-        }
-        initStars();
-
-        function spawnObstacle() {
-          const kind = Math.random();
-          if (kind < 0.18 && score > 300) {
-            obstacles.push({
-              type: "emu",
-              x: VW,
-              y: GROUND_LINE - 45,
-              w: 29,
-              h: 45,
-            });
-          } else if (kind < 0.36) {
-            // Küme okaliptüs (en büyük) — 54 birim
-            obstacles.push({
-              type: "tree",
-              cluster: true,
-              x: VW,
-              y: GROUND_LINE - 54,
-              w: 44,
-              h: 54,
-            });
-          } else if (kind < 0.56) {
-            // Büyük okaliptüs — 50 birim
-            obstacles.push({
-              type: "tree",
-              cluster: false,
-              x: VW,
-              y: GROUND_LINE - 50,
-              w: 40,
-              h: 50,
-            });
-          } else if (kind < 0.76) {
-            // Küçük okaliptüs — 45 birim
-            obstacles.push({
-              type: "tree",
-              cluster: false,
-              x: VW,
-              y: GROUND_LINE - 45,
-              w: 34,
-              h: 45,
-            });
-          } else if (kind < 0.9) {
-            // Büyük kaya — 30 birim
-            obstacles.push({
-              type: "rock",
-              x: VW,
-              y: GROUND_LINE - 30,
-              w: 42,
-              h: 30,
-            });
-          } else {
-            // Küçük kaya — 25 birim
-            obstacles.push({
-              type: "rock",
-              x: VW,
-              y: GROUND_LINE - 25,
-              w: 34,
-              h: 25,
-            });
-          }
-        }
-
-        let nextSpawnFrame = 60;
-
-        function scheduleNextSpawn() {
-          const base = Math.max(38, Math.floor(85 - speed * 3));
-          nextSpawnFrame = frame + base + Math.floor(Math.random() * 25);
-        }
-
-        function update() {
-          frame++;
-          animFrame++;
-
-          const wasAir = dino.jumping;
-          dino.vy += GRAVITY;
-          dino.y += dino.vy;
-          if (dino.y > GROUND_Y) {
-            dino.y = GROUND_Y;
-            dino.vy = 0;
-            dino.jumping = false;
-          }
-          if (wasAir && !dino.jumping) {
-            landing = 7;
-            spawnDust(7);
-            sfx.land();
-          }
-          if (takeoff > 0) takeoff--;
-          if (landing > 0) landing--;
-          if (!dino.jumping && frame % 7 === 0) spawnDust(1);
-          updateWorld();
-
-          if (frame >= nextSpawnFrame) {
-            spawnObstacle();
-            scheduleNextSpawn();
-          }
-
-          for (let o of obstacles) o.x -= speed + (o.type === "emu" ? 1.5 : 0); // emu daha hızlı koşar
-          obstacles = obstacles.filter((o) => o.x > -30);
-
-          const before = Math.floor(score / 100);
-          score += 0.15;
-          if (Math.floor(score / 100) > before) sfx.ping();
-          speed += 0.0015;
-
-          groundOffset = (groundOffset - speed) % 24;
-          const night = Math.floor(score / 500) % 2 === 1;
-          if (night !== isNight) {
-            isNight = night;
-            initStars();
-            if (night) sfx.night();
-            else sfx.day();
-            // CSS tema değişkenlerini güncelle → HUD, kart, mesaj otomatik uyum sağlar
-            document.documentElement.setAttribute(
-              "data-theme",
-              night ? "dark" : "light",
-            );
-          }
-
-          const dh = dino.h;
-          const dy = dino.y;
-          const pad = 3;
-          if (invuln > 0) invuln--;
-          for (let o of obstacles) {
-            if (invuln > 0) break;
-            if (
-              dino.x + pad < o.x + o.w - pad &&
-              dino.x + dino.w - pad > o.x + pad &&
-              dy + pad < o.y + o.h - pad &&
-              dy + dh - pad > o.y + pad
-            ) {
-              lives--;
-              sfx.hit();
-              renderLives();
-              if (lives <= 0) {
-                endGame();
-              } else {
-                invuln = 90;
-                obstacles = obstacles.filter((x) => x !== o);
-              }
-              break;
-            }
-          }
-        }
-
-        function endGame() {
-          running = false;
-          stopMusic();
-          syncPause();
-          if (Math.floor(score) > highScore) {
-            highScore = Math.floor(score);
-            saveHigh(highScore);
-            updateHi();
-            setMsg("rec");
-            sfx.record();
-          } else {
-            setMsg("over");
-            sfx.over();
-          }
-        }
-
-        // ----- Kanguru: paletli, parçalardan çizilir (koşarken sekme, havada gerilme, inişte ezilme) -----
-        const ROO = {
-          fur: "#8b4a1e", // ana tüy — koyu kahve (önce #c27a3d)
-          dark: "#5a3018", // gölge/ayak — çok koyu (önce #8c5428)
-          far: "#6e3a1c", // uzak bacak — koyu (önce #a5622e)
-          belly: "#e8c79f", // karın — koyu krem (önce #f0d3ad)
-          ear: "#c97f76", // kulak içi — koyu pembe (önce #e9a59b)
-          nose: "#1a0d06", // burun — neredeyse siyah (önce #2e1a12)
-        };
-
-        function ell(c, x, y, rx, ry, rot) {
-          ctx.fillStyle = c;
-          ctx.beginPath();
-          ctx.ellipse(x, y, rx, ry, rot || 0, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        function limb(c, w, pts) {
-          // yuvarlak uçlu kalın çizgi (bacak, kol, gövde)
-          ctx.strokeStyle = c;
-          ctx.lineWidth = w;
-          ctx.lineCap = "round";
-          ctx.lineJoin = "round";
-          ctx.beginPath();
-          ctx.moveTo(pts[0], pts[1]);
-          for (let i = 2; i < pts.length; i += 2)
-            ctx.lineTo(pts[i], pts[i + 1]);
-          ctx.stroke();
-        }
-
-        function spawnDust(n) {
-          for (let i = 0; i < n; i++) {
-            dust.push({
-              x: dino.x + 4 + Math.random() * 10,
-              y: GROUND_LINE - 3,
-              vx: -speed * 0.4 - Math.random(),
-              vy: -Math.random() * 1.4,
-              life: 18,
-              max: 18,
-            });
-          }
-        }
-
-        function updateWorld() {
-          hillFar += speed * 0.12;
-          hillNear += speed * 0.3;
-          for (const c of clouds) {
-            const spd =
-              (0.2 + speed * 0.04) * c.speed * (c.layer === 1 ? 0.5 : 1);
-            c.x -= spd;
-            const margin = c.w * 1.5 + 40;
-            if (c.x < -margin) c.x = VW + margin;
-          }
-          for (const d of dust) {
-            d.x += d.vx;
-            d.y += d.vy;
-            d.vy += 0.06;
-            d.life--;
-          }
-          dust = dust.filter((d) => d.life > 0);
-          nightT = Math.max(
-            0,
-            Math.min(1, nightT + (isNight ? 0.012 : -0.012)),
-          );
-        }
-
-        function drawRoo() {
-          const air = dino.jumping;
-          const p = animFrame * 0.22;
-          const hop = !air && running ? Math.abs(Math.sin(p)) : 0;
-          const sx = takeoff > 0 ? 0.9 : landing > 0 ? 1.18 : 1;
-          const sy = takeoff > 0 ? 1.12 : landing > 0 ? 0.82 : 1;
-          const tail = air ? -4 : hop * 2;
-          const arm = air ? -2 : hop;
-          const kx = air ? -3 : Math.sin(p) * 2;
-          const ox = Math.round(dino.x + dino.w / 2),
-            oy = Math.round(GROUND_LINE - (GROUND_Y - dino.y) - hop * 3);
-
-          const lift = GROUND_Y - dino.y; // gölge, yerden yükseldikçe küçülür
-          ctx.fillStyle = "rgba(0,0,0,0.28)";
-          ctx.beginPath();
-          // Daha küçük ve hafif elips — kangurunun ayak izi kadar
-          const shadowRx = Math.max(5, 11 - lift * 0.08);
-          const shadowRy = Math.max(1.2, 1.8 - lift * 0.01);
-          ctx.ellipse(
-            ox + 1,
-            GROUND_LINE + 0.5,
-            shadowRx,
-            shadowRy,
-            0,
-            0,
-            Math.PI * 2,
-          );
-          ctx.fill();
-          ctx.save();
-          ctx.translate(ox, oy);
-          ctx.scale(sx * 1.25, sy * 1.25);
-          ctx.fillStyle = ROO.fur; // kalın, sivrilen kuyruk
-          ctx.moveTo(-6, -22);
-          ctx.quadraticCurveTo(-20, -19 + tail, -32, -4 + tail);
-          ctx.quadraticCurveTo(-18, -9 + tail * 0.5, -5, -10);
-          ctx.closePath();
-          ctx.fill();
-          ell(ROO.dark, -31, -5 + tail, 2.4, 1.6, 0.5);
-          limb(ROO.far, 4, [-2, -12, 1 + kx * 0.5, -6, 4 + kx, -2]); // uzak arka bacak
-          limb(ROO.far, 3, [4 + kx, -1.5, 14 + kx, -1.5]);
-          const bg = ctx.createLinearGradient(-8, -34, 8, -8); // gövde — koyu ton
-          bg.addColorStop(0, "#a85a25");
-          bg.addColorStop(1, "#6b3517");
-          ctx.fillStyle = bg;
-          ctx.beginPath();
-          ctx.ellipse(0, -21, 10, 14, 0.22, 0, Math.PI * 2);
-          ctx.fill();
-          ell(ROO.fur, 6, -29, 6.5, 7.5, 0.3); // omuz/göğüs — biraz daha geniş
-          ell(ROO.belly, 5, -17, 4.2, 8, 0.2); // karın — biraz geniş
-          ctx.strokeStyle = "rgba(120,70,35,0.45)"; // göğüs kas çizgisi (erkek vurgusu)
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.arc(3, -24, 6, 0.4, 1.9);
-          ctx.stroke();
-          ell(ROO.fur, -3, -14, 8.5, 6.5, -0.65); // yakın arka bacak
-          ell("#a85a25", -4, -16, 5, 3.4, -0.65); // iç aydınlık (koyu tona göre)
-          limb(ROO.fur, 4.5, [-3, -11, 1 + kx * 0.5, -5.5, 3 + kx, -2.5]);
-          limb(ROO.dark, 3.2, [3 + kx, -1.6, 14 + kx, -1.6]);
-          limb(ROO.dark, 3, [8, -25, 12, -21 + arm, 14, -19 + arm]); // ön kol — biraz kalın
-          ell(ROO.fur, 8, -32, 3.6, 6, 0.35); // boyun ve baş
-          ell(ROO.fur, 11, -36, 4.6, 4, 0);
-          ell(ROO.fur, 16.5, -34.5, 5.2, 2.9, 0.28);
-          ell(ROO.belly, 15, -32.8, 3.4, 1.1, 0.28);
-          ell(ROO.nose, 21, -33.6, 1.4, 1.1);
-          ell("#ffffff", 12.5, -37.2, 1.5, 1.5);
-          ell("#1c1210", 12.9, -37.2, 0.8, 0.8);
-          ell(ROO.fur, 9, -42.5, 1.9, 5, -0.15); // uzun kulaklar
-          ell(ROO.fur, 12.5, -42.5, 1.9, 5.2, 0.12);
-          ell(ROO.ear, 9.2, -42.5, 0.8, 3.4, -0.15);
-          ell(ROO.ear, 12.4, -42.5, 0.8, 3.5, 0.12);
-          ctx.restore();
-        }
-
-        function gum(x, base, w, h) {
-          // Okaliptüs: ince uzun gövde + üstte yoğun yaprak kümesi.
-          // h/w oranı büyük olduğu için daha dik ve zarif görünür.
-          const cx = x + w / 2;
-          const top = base - h;
-
-          // Gölge (tabanda, hafif)
-          ctx.fillStyle = "rgba(0,0,0,0.18)";
-          ctx.beginPath();
-          ctx.ellipse(cx, base + 1, w * 0.55, 2.2, 0, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Ana gövde: yukarı doğru incelen, hafif kıvrımlı
-          const trunkW = Math.max(3.5, w * 0.13);
-          limb("#e6dcc7", trunkW, [
-            cx,
-            base,
-            cx - w * 0.04,
-            base - h * 0.3,
-            cx + w * 0.03,
-            base - h * 0.55,
-            cx - w * 0.02,
-            base - h * 0.75,
-          ]);
-
-          // Gövde üzerinde hafif kabuk dokusu (koyu çizgi)
-          limb("rgba(120,100,80,0.4)", 0.9, [
-            cx - 1,
-            base - h * 0.05,
-            cx - 1.2,
-            base - h * 0.55,
-          ]);
-
-          // Ana gövdeden ayrılan büyük dal (sağa doğru yukarı)
-          limb("#d3c7ae", Math.max(2.2, w * 0.08), [
-            cx + w * 0.02,
-            base - h * 0.55,
-            cx + w * 0.22,
-            base - h * 0.72,
-            cx + w * 0.3,
-            base - h * 0.85,
-          ]);
-
-          // İkinci küçük dal (sola doğru yukarı)
-          limb("#d3c7ae", Math.max(1.8, w * 0.06), [
-            cx - w * 0.02,
-            base - h * 0.65,
-            cx - w * 0.2,
-            base - h * 0.8,
-          ]);
-
-          // Yaprak kümesi: üst kısımda yoğun, dikey uzayan elipsler
-          // (mavi-yeşil tonlar, okaliptüs yaprakları)
-          const leafData = [
-            // [renk, offsetX, offsetY(h oranı), rx(w oranı), ry(h oranı), rotasyon]
-            ["#3f6a52", -0.3, 0.18, 0.3, 0.16, -0.3], // sol alt (koyu)
-            ["#4f7c60", 0.28, 0.15, 0.3, 0.16, 0.3], // sağ alt (koyu)
-            ["#5f8c6e", -0.18, 0.05, 0.32, 0.15, -0.15], // sol orta
-            ["#6f9a7a", 0.18, 0.02, 0.32, 0.15, 0.15], // sağ orta
-            ["#7fa886", -0.02, -0.08, 0.36, 0.14, 0], // merkez üst
-            ["#8fbc94", -0.05, -0.15, 0.22, 0.1, 0], // tepede açık yeşil
-          ];
-          for (const [color, ox, oy, rx, ry, rot] of leafData) {
-            ell(color, cx + w * ox, top + h * oy, w * rx, h * ry, rot);
-          }
-
-          // Sarkık yapraklar (okaliptüs karakteristik — aşağı sarkan ince dallar)
-          limb("#5f8c6e", 1.3, [
-            cx - w * 0.32,
-            top + h * 0.28,
-            cx - w * 0.38,
-            top + h * 0.42,
-          ]);
-          limb("#5f8c6e", 1.3, [
-            cx + w * 0.32,
-            top + h * 0.25,
-            cx + w * 0.4,
-            top + h * 0.4,
-          ]);
-          // Üstte hafif yaprak uçları
-          limb("#7fa886", 1.0, [
-            cx - w * 0.1,
-            top + h * 0.02,
-            cx - w * 0.16,
-            top - h * 0.02,
-          ]);
-          limb("#7fa886", 1.0, [
-            cx + w * 0.1,
-            top + h * 0.02,
-            cx + w * 0.16,
-            top - h * 0.02,
-          ]);
-        }
-
-        function drawTree(o) {
-          const base = o.y + o.h;
-          if (o.cluster) {
-            // Küme: 3 ağaç, farklı yüksekliklerde — ferah ve doğal
-            gum(o.x, base, 30, 48);
-            gum(o.x + 16, base, 32, 54);
-            gum(o.x + 34, base, 28, 44);
-            return;
-          }
-          gum(o.x, base, o.w, o.h);
-        }
-
-        function drawEmu(o) {
-          // sola doğru koşan emu
-          const scale = 1.25;
-          const x = o.x,
-            y = o.y,
-            leg = Math.sin(animFrame * 0.3) * 4;
-          ctx.save();
-          ctx.translate(x, y);
-          ctx.scale(scale, scale);
-          ctx.translate(-x, -y);
-          ctx.fillStyle = "rgba(0,0,0,0.18)";
-          ctx.beginPath();
-          ctx.ellipse(x + 15, y + 40, 11, 1.8, 0, 0, Math.PI * 2);
-          ctx.fill();
-          limb("#5d5048", 2.2, [
-            x + 13,
-            y + 27,
-            x + 13 + leg * 0.6,
-            y + 34,
-            x + 13 + leg,
-            y + 39.5,
-            x + 9 + leg,
-            y + 39.5,
-          ]);
-          limb("#5d5048", 2.2, [
-            x + 17,
-            y + 27,
-            x + 17 - leg * 0.6,
-            y + 34,
-            x + 17 - leg,
-            y + 39.5,
-            x + 13 - leg,
-            y + 39.5,
-          ]);
-          ell("#6b5242", x + 15, y + 20, 10.5, 8.5, 0.1);
-          ell("#7d6252", x + 14, y + 18, 7, 5, 0.1);
-          ell("#5a4234", x + 24, y + 17, 3.6, 6, 0.3);
-          limb("rgba(40,28,20,0.45)", 0.8, [x + 9, y + 19, x + 13, y + 20]);
-          limb("rgba(40,28,20,0.45)", 0.8, [x + 14, y + 23, x + 19, y + 23]);
-          limb("#8b9db0", 3.4, [x + 9, y + 17, x + 6, y + 10, x + 4, y + 5]);
-          ell("#8b9db0", x + 3.5, y + 4.5, 3.4, 2.5, -0.2);
-          ctx.fillStyle = "#4a4036";
-          ctx.beginPath();
-          ctx.moveTo(x + 0.5, y + 3.6);
-          ctx.lineTo(x - 4, y + 5.2);
-          ctx.lineTo(x + 0.8, y + 6);
-          ctx.closePath();
-          ctx.fill();
-          ell("#d9822b", x + 3.6, y + 3.8, 1.2, 1.2);
-          ell("#111111", x + 3.4, y + 3.8, 0.55, 0.55);
-          ctx.restore();
-        }
-
-        function drawRock(o) {
-          // Kaya: o.w ve o.h'ye göre dinamik çizim — büyük (30) / küçük (25) iki boy
-          const w = o.w,
-            h = o.h;
-          const x = o.x,
-            y = o.y;
-          const cx = x + w / 2;
-          const base = y + h;
-
-          // Gölge (tabanda)
-          ctx.fillStyle = "rgba(0,0,0,0.22)";
-          ctx.beginPath();
-          ctx.ellipse(cx, base + 1, w * 0.55, h * 0.12, 0, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Ana kaya gövdesi — düzensiz ama dengeli bir poligon
-          const g = ctx.createLinearGradient(x, y, x + w, base);
-          g.addColorStop(0, "#c4b9a8");
-          g.addColorStop(0.5, "#a89c8c");
-          g.addColorStop(1, "#6a6058");
-          ctx.fillStyle = g;
-
-          ctx.beginPath();
-          ctx.moveTo(x + w * 0.05, base); // sol alt
-          ctx.lineTo(x + w * 0.02, base - h * 0.35); // sol
-          ctx.lineTo(x + w * 0.18, base - h * 0.85); // sol üst
-          ctx.lineTo(x + w * 0.42, base - h * 1.0); // tepe
-          ctx.lineTo(x + w * 0.72, base - h * 0.92); // sağ üst
-          ctx.lineTo(x + w * 0.92, base - h * 0.55); // sağ
-          ctx.lineTo(x + w * 0.98, base - h * 0.15); // sağ alt
-          ctx.lineTo(x + w * 0.95, base); // sağ dip
-          ctx.closePath();
-          ctx.fill();
-
-          // Üst kısımda aydınlık (ışık vurgusu)
-          ctx.fillStyle = "rgba(255,255,255,0.25)";
-          ctx.beginPath();
-          ctx.moveTo(x + w * 0.18, base - h * 0.85);
-          ctx.lineTo(x + w * 0.42, base - h * 1.0);
-          ctx.lineTo(x + w * 0.6, base - h * 0.8);
-          ctx.lineTo(x + w * 0.38, base - h * 0.68);
-          ctx.closePath();
-          ctx.fill();
-
-          // Sağ-alt kısımda koyu gölge
-          ctx.fillStyle = "rgba(0,0,0,0.22)";
-          ctx.beginPath();
-          ctx.moveTo(x + w * 0.6, base - h * 0.8);
-          ctx.lineTo(x + w * 0.92, base - h * 0.55);
-          ctx.lineTo(x + w * 0.98, base - h * 0.15);
-          ctx.lineTo(x + w * 0.95, base);
-          ctx.lineTo(x + w * 0.65, base);
-          ctx.closePath();
-          ctx.fill();
-
-          // Çatlak/çizgi detayı (orta bölge)
-          ctx.strokeStyle = "rgba(50,42,36,0.55)";
-          ctx.lineWidth = 0.9;
-          ctx.beginPath();
-          ctx.moveTo(x + w * 0.4, base - h * 0.55);
-          ctx.lineTo(x + w * 0.48, base - h * 0.35);
-          ctx.lineTo(x + w * 0.42, base - h * 0.18);
-          ctx.stroke();
-
-          // İkinci küçük çizgi
-          ctx.beginPath();
-          ctx.moveTo(x + w * 0.62, base - h * 0.42);
-          ctx.lineTo(x + w * 0.7, base - h * 0.28);
-          ctx.stroke();
-        }
-
-        function hexRgb(c) {
-          return [
-            parseInt(c.slice(1, 3), 16),
-            parseInt(c.slice(3, 5), 16),
-            parseInt(c.slice(5, 7), 16),
-          ];
-        }
-
-        function mix(a, b, t) {
-          const x = hexRgb(a),
-            y = hexRgb(b);
-          return (
-            "rgb(" +
-            x.map((v, i) => Math.round(v + (y[i] - v) * t)).join(",") +
-            ")"
-          );
-        }
-
-        function hills(off, base, amp, color) {
-          ctx.fillStyle = color;
-          ctx.beginPath();
-          ctx.moveTo(0, GROUND_LINE);
-          for (let x = 0; x <= VW; x += 8) {
-            ctx.lineTo(
-              x,
-              base -
-                Math.sin((x + off) * 0.012) * amp -
-                Math.sin((x + off) * 0.031) * amp * 0.4,
-            );
-          }
-          ctx.lineTo(VW, GROUND_LINE);
-          ctx.closePath();
-          ctx.fill();
-        }
-
-        function drawSky(n) {
-          // Güneş ve ay: ortada ve yukarıda (DinoRun gibi)
-          const isPortraitMobile =
-            window.innerWidth / window.innerHeight < 0.85 &&
-            window.innerWidth < 700;
-          const cx = VW * 0.5;
-          const cRadius = isPortraitMobile
-            ? Math.max(11, VW * 0.055)
-            : Math.max(5, VW * 0.025);
-          const cy = Math.max(cRadius + 12, GROUND_LINE * 0.35);
-
-          if (n > 0.02) {
-            // yıldızlar göz kırpar
-            for (const st of stars) {
-              const tw =
-                0.4 + 0.6 * Math.abs(Math.sin(animFrame * 0.04 + st.phase));
-              ctx.globalAlpha = n * tw;
-              ctx.fillStyle = "#ffffff";
-              ctx.fillRect(st.x, st.y, st.size, st.size);
-            }
-            ctx.globalAlpha = 1;
-          }
-          if (n < 0.98) {
-            // güneş: ışık halesi + degrade disk
-            const glowR = cRadius * 2.8;
-            const g = ctx.createRadialGradient(
-              cx,
-              cy,
-              cRadius * 0.27,
-              cx,
-              cy,
-              glowR,
-            );
-            g.addColorStop(
-              0,
-              "rgba(255,244,190," + (0.7 * (1 - n)).toFixed(2) + ")",
-            );
-            g.addColorStop(1, "rgba(255,244,190,0)");
-            ctx.fillStyle = g;
-            ctx.fillRect(cx - glowR, cy - glowR, glowR * 2, glowR * 2);
-            ctx.globalAlpha = 1 - n;
-            const d = ctx.createRadialGradient(
-              cx - cRadius * 0.2,
-              cy - cRadius * 0.2,
-              cRadius * 0.13,
-              cx,
-              cy,
-              cRadius,
-            );
-            d.addColorStop(0, "#fffbe0");
-            d.addColorStop(1, "#ffd45c");
-            ctx.fillStyle = d;
-            ctx.beginPath();
-            ctx.arc(cx, cy, cRadius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.globalAlpha = 1;
-          }
-          if (n > 0.02) {
-            // ay: soluk hale, kraterli disk
-            const glowR = cRadius * 2.8;
-            const h = ctx.createRadialGradient(
-              cx,
-              cy,
-              cRadius * 0.57,
-              cx,
-              cy,
-              glowR,
-            );
-            h.addColorStop(
-              0,
-              "rgba(200,210,255," + (0.35 * n).toFixed(2) + ")",
-            );
-            h.addColorStop(1, "rgba(200,210,255,0)");
-            ctx.fillStyle = h;
-            ctx.fillRect(cx - glowR, cy - glowR, glowR * 2, glowR * 2);
-            ctx.globalAlpha = n;
-            const m = ctx.createRadialGradient(
-              cx - cRadius * 0.3,
-              cy - cRadius * 0.3,
-              cRadius * 0.15,
-              cx,
-              cy,
-              cRadius * 1.07,
-            );
-            m.addColorStop(0, "#fbf8e8");
-            m.addColorStop(1, "#cfc9b0");
-            ctx.fillStyle = m;
-            ctx.beginPath();
-            ctx.arc(cx, cy, cRadius, 0, Math.PI * 2);
-            ctx.fill();
-            // Kraterler (boyuta göre ölçekli)
-            ctx.fillStyle = "rgba(150,145,120,0.45)";
-            const craters = [
-              [-0.31, -0.23, 0.23],
-              [0.31, 0.15, 0.18],
-              [-0.15, 0.46, 0.12],
-              [0.38, -0.46, 0.11],
-            ];
-            for (const c of craters) {
-              ctx.beginPath();
-              ctx.arc(
-                cx + c[0] * cRadius,
-                cy + c[1] * cRadius,
-                c[2] * cRadius,
-                0,
-                Math.PI * 2,
-              );
-              ctx.fill();
-            }
-            ctx.globalAlpha = 1;
-          }
-          // Bulutlar: sadece gündüz görünür, gece tamamen kaybolur (yumuşak geçiş)
-          const cloudFade = Math.max(0, 1 - n * 2); // n=0 → 1, n=0.5 → 0, n=1 → 0
-          if (cloudFade > 0.01) {
-            const bodyNear = mix("#ffffff", "#9d92c4", n),
-              shadeNear = mix("#cfe0f0", "#6d6498", n);
-            const bodyFar = mix("#e8eef5", "#7e8ab0", n),
-              shadeFar = mix("#c0d2e5", "#5a6188", n);
-
-            for (const c of clouds) {
-              const cy2 = c.y;
-              const isFar = c.layer === 1;
-              const body = isFar ? bodyFar : bodyNear;
-              const shade = isFar ? shadeFar : shadeNear;
-              ctx.globalAlpha = ((isFar ? 0.55 : 0.93) - 0.2 * n) * cloudFade;
-
-              [
-                [shade, 3],
-                [body, 0],
-              ].forEach((layer) => {
-                ctx.fillStyle = layer[0];
-                ctx.beginPath();
-                CLOUD_TYPES[c.type].forEach((q) => {
-                  const bx = c.x + c.w * q[0],
-                    by = cy2 + c.w * q[1] + layer[1];
-                  ctx.moveTo(bx + c.w * q[2], by);
-                  ctx.arc(bx, by, c.w * q[2], 0, Math.PI * 2);
-                });
-                ctx.fill();
-              });
-            }
-          }
-          ctx.globalAlpha = 1;
-        }
-
-        function draw() {
-          ctx.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, 0, 0);
-          const n = nightT;
-          // CSS --bg değişkenini gece/gündüz rengine göre güncelle (letterbox uyumu)
-          const bgR = Math.round(224 + (107 - 224) * n); // 224 → 107
-          const bgG = Math.round(178 + (74 - 178) * n); // 178 → 74
-          const bgB = Math.round(127 + (82 - 127) * n); // 127 → 82
-          document.documentElement.style.setProperty(
-            "--bg",
-            "rgb(" + bgR + "," + bgG + "," + bgB + ")",
-          );
-
-          // Gökyüzü — üst %75'i kaplar
-          const sky = ctx.createLinearGradient(0, 0, 0, GROUND_LINE);
-          sky.addColorStop(0, mix("#6ec6f5", "#10113a", n));
-          sky.addColorStop(1, mix("#fbe3c0", "#4a2c5e", n));
-          ctx.fillStyle = sky;
-          ctx.fillRect(0, 0, VW, VH);
-
-          drawSky(n);
-
-          hills(hillFar, GROUND_LINE - 66, 36, mix("#f5d9b5", "#3a2d55", n));
-          hills(hillNear, GROUND_LINE - 30, 27, mix("#e9c090", "#2e2245", n));
-
-          // Kızıl toprak şerit (ince — 10 birim)
-          ctx.fillStyle = mix("#b5532c", "#3a1f2b", n);
-          ctx.fillRect(0, GROUND_LINE, VW, 10);
-          ctx.fillStyle = mix("#8f3d20", "#2a1520", n);
-          ctx.fillRect(0, GROUND_LINE, VW, 2);
-          ctx.globalAlpha = 0.3;
-          for (let gx = 0; gx < VW; gx += 40) {
-            ctx.fillRect(gx, GROUND_LINE + 5, 8, 1);
-          }
-          ctx.globalAlpha = 1;
-
-          // ÇÖL BÖLGESİ (alt 75 birim) — sabit kum rengi
-          ctx.fillStyle = mix("#e0b27f", "#6b4a52", n);
-          ctx.fillRect(0, GROUND_LINE + 10, VW, VH - GROUND_LINE - 10);
-
-          // Çöl üst geçiş çizgisi (yumuşak)
-          ctx.fillStyle = mix("#d4a870", "#5a4050", n);
-          ctx.fillRect(0, GROUND_LINE + 10, VW, 2);
-
-          ctx.fillStyle = mix("#e0b27f", "#6b4a52", n);
-          for (const d of dust) {
-            ctx.globalAlpha = d.life / d.max;
-            ctx.fillRect(d.x, d.y, 3, 3);
-          }
-          ctx.globalAlpha = 1;
-
-          // Kanguru
-          if (!(invuln > 0 && Math.floor(invuln / 5) % 2 === 0)) drawRoo();
-
-          for (const o of obstacles) {
-            if (o.type === "tree") drawTree(o);
-            else if (o.type === "emu") drawEmu(o);
-            else drawRock(o);
-          }
-
-          curEl.textContent = pad(score);
-        }
-
-        const STEP_MS = 1000 / 60;
-        let accMs = 0,
-          lastMs = 0;
-
-        function loop(now) {
-          requestAnimationFrame(loop);
-          now = now || performance.now();
-          accMs += Math.min(now - (lastMs || now - STEP_MS), 100);
-          lastMs = now;
-          let steps = 0;
-          while (accMs >= STEP_MS - 1 && steps < 5) {
-            accMs -= STEP_MS;
-            steps++;
-            if (running && !menuOpen && !aboutOpen && !paused) update();
-          }
-          if (steps === 5) accMs = 0;
-          draw();
-        }
-
-        document.addEventListener("keydown", (e) => {
-          if (
-            menuOpen ||
-            aboutOpen ||
-            (e.target.closest && e.target.closest("#topright, #topleft"))
-          )
-            return;
-          if (e.code === "KeyP") {
-            setPaused(!paused);
-            return;
-          }
-          if (paused) {
-            if (e.code === "Space" || e.code === "ArrowUp") e.preventDefault();
-            return;
-          }
-          if (e.code === "Space" || e.code === "ArrowUp") {
-            e.preventDefault();
-            jump();
-          }
-        });
-        // Hem dokunmatik (iPad/iPhone) hem fare (PC) desteği
-        canvas.addEventListener("pointerdown", () => jump());
-        canvas.addEventListener("touchstart", (e) => {
-          e.preventDefault();
-          jump();
-        }, { passive: false });
-
-        // ===== SES (Web Audio, dosyasız) =====
+        refreshThemeColors();
+
+        // ===== SES SİSTEMİ (Web Audio, 8-bit retro ton) =====
+        let soundOn = true;
+        try {
+          soundOn = localStorage.getItem("dino_sound") !== "0";
+        } catch (e) {}
         let audioCtx = null;
 
         function ac() {
@@ -2864,13 +1672,12 @@
         }
 
         const sfx = {
-          start: () => tone(440, 880, 0.12, "square", 0.08),
-          jump: () => tone(300, 700, 0.14, "square", 0.09),
-          land: () => noise(0.07, 0.12, 600),
-          ping: () => tone(880, 1320, 0.1, "square", 0.07),
+          jump: () => tone(220, 660, 0.1, "square", 0.08),
+          land: () => noise(0.06, 0.1, 400),
+          ping: () => tone(880, 1320, 0.07, "square", 0.06),
           hit: () => {
-            noise(0.25, 0.25, 900);
-            tone(220, 60, 0.25, "sawtooth", 0.14);
+            noise(0.2, 0.22, 800);
+            tone(180, 50, 0.2, "square", 0.14);
           },
           over: () => {
             [392, 330, 262, 196].forEach((f, i) =>
@@ -2901,195 +1708,197 @@
           },
         };
 
-        // ===== MÜZİK (prosedürel chiptune) =====
-        let musicTimer = 0;
-        let musicStep = 0;
-        let musicPlaying = false;
-        const MUSIC_BPM = 120;
-        const MUSIC_STEP_MS = ((60 / MUSIC_BPM) * 1000) / 2; // sekizlik notalar
-
-        // Basit melodi (frekanslar Hz cinsinden)
-        // Nota isimleri: A=440 referans
-        const NOTE = {
-          A2: 110.0,
-          C3: 130.81,
-          D3: 146.83,
-          E3: 164.81,
-          F3: 174.61,
-          G3: 196.0,
-          A3: 220.0,
-          C4: 261.63,
-          D4: 293.66,
-          E4: 329.63,
-          F4: 349.23,
-          G4: 392.0,
-          A4: 440.0,
-          C5: 523.25,
-          D5: 587.33,
-          E5: 659.25,
-          G5: 783.99,
-          A5: 880.0,
-        };
-
-        // 16 adımlık döngü (sekizlik notalar). 0 = sus.
-        const MUSIC_BASS = [
-          NOTE.A2,
-          0,
-          NOTE.A2,
-          0,
-          NOTE.A2,
-          0,
-          NOTE.E3,
-          0,
-          NOTE.F3,
-          0,
-          NOTE.F3,
-          0,
-          NOTE.F3,
-          0,
-          NOTE.C3,
-          0,
-          NOTE.G3,
-          0,
-          NOTE.G3,
-          0,
-          NOTE.G3,
-          0,
-          NOTE.D3,
-          0,
-          NOTE.F3,
-          0,
-          NOTE.F3,
-          0,
-          NOTE.E3,
-          0,
-          NOTE.D3,
-          0,
-        ];
-
-        const MUSIC_LEAD = [
-          NOTE.E5,
-          0,
-          0,
-          0,
-          NOTE.D5,
-          0,
-          0,
-          0,
-          NOTE.C5,
-          0,
-          0,
-          0,
-          NOTE.D5,
-          0,
-          0,
-          0,
-          NOTE.E5,
-          0,
-          0,
-          0,
-          NOTE.G5,
-          0,
-          0,
-          0,
-          NOTE.A5,
-          0,
-          0,
-          0,
-          NOTE.G5,
-          0,
-          0,
-          0,
-        ];
-
-        function playMusicStep() {
-          if (!soundOn || !running || paused) return;
-          const a = ac();
-          if (!a) return;
-          const t = a.currentTime;
-          const step = musicStep % 32;
-
-          // Bas
-          const bassFreq = MUSIC_BASS[step % MUSIC_BASS.length];
-          if (bassFreq) {
-            const o = a.createOscillator(),
-              g = a.createGain();
-            o.type = "triangle";
-            o.frequency.value = bassFreq;
-            g.gain.setValueAtTime(0.0001, t);
-            g.gain.exponentialRampToValueAtTime(0.055, t + 0.01);
-            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-            o.connect(g);
-            g.connect(a.destination);
-            o.start(t);
-            o.stop(t + 0.2);
-          }
-
-          // Melodi
-          const leadFreq = MUSIC_LEAD[step % MUSIC_LEAD.length];
-          if (leadFreq) {
-            const o = a.createOscillator(),
-              g = a.createGain();
-            o.type = "square";
-            o.frequency.value = leadFreq;
-            g.gain.setValueAtTime(0.0001, t);
-            g.gain.exponentialRampToValueAtTime(0.028, t + 0.008);
-            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
-            o.connect(g);
-            g.connect(a.destination);
-            o.start(t);
-            o.stop(t + 0.16);
-          }
-
-          // Hi-hat (her adımda hafif gürültü)
-          if (step % 2 === 1) {
-            const len = Math.floor(a.sampleRate * 0.03);
-            const buf = a.createBuffer(1, len, a.sampleRate);
-            const d = buf.getChannelData(0);
-            for (let i = 0; i < len; i++)
-              d[i] = (Math.random() * 2 - 1) * (1 - i / len);
-            const src = a.createBufferSource();
-            src.buffer = buf;
-            const f = a.createBiquadFilter();
-            f.type = "highpass";
-            f.frequency.value = 6000;
-            const g = a.createGain();
-            g.gain.value = 0.02;
-            src.connect(f);
-            f.connect(g);
-            g.connect(a.destination);
-            src.start(t);
-          }
-
-          // Kick (her 4 adımda bir)
-          if (step % 4 === 0) {
-            const o = a.createOscillator(),
-              g = a.createGain();
-            o.type = "sine";
-            o.frequency.setValueAtTime(150, t);
-            o.frequency.exponentialRampToValueAtTime(50, t + 0.1);
-            g.gain.setValueAtTime(0.07, t);
-            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
-            o.connect(g);
-            g.connect(a.destination);
-            o.start(t);
-            o.stop(t + 0.14);
-          }
-
-          musicStep++;
+        function updateHi() {
+          const labelEl = document.getElementById("hiLabel");
+          const valueEl = document.getElementById("hiValue");
+          if (labelEl) labelEl.textContent = "🏆";
+          if (valueEl) valueEl.textContent = pad(highScore);
+        }
+        function renderMsg() {
+          msgEl.textContent = msgKey ? lang[msgKey] : "";
+        }
+        function setMsg(k) {
+          msgKey = k;
+          renderMsg();
         }
 
-        function startMusic() {
-          if (musicPlaying) return;
-          musicPlaying = true;
-          musicTimer = setInterval(playMusicStep, MUSIC_STEP_MS);
+        function applyLang() {
+          document.documentElement.lang = lang.html;
+          document.documentElement.dir = lang.code === "AR" ? "rtl" : "ltr";
+          document.title = lang.title;
+
+          document.getElementById("resetText").textContent =
+            RESET[lang.code].reset;
+          document.getElementById("pauseText").textContent = paused
+            ? lang.resume
+            : lang.pause;
+          document.getElementById("pauseIcon").textContent = paused ? "▶" : "⏸";
+          document.getElementById("aboutBtnText").textContent = lang.about;
+
+          // Ses butonu metni
+          const sIcon = document.getElementById("soundIcon");
+          const sText = document.getElementById("soundText");
+          if (sIcon && sText) {
+            sIcon.textContent = soundOn ? "🔊" : "🔇";
+            sText.textContent = soundOn ? lang.sound : lang.soundOn;
+          }
+
+          aboutTitle.textContent = lang.about;
+          aboutHow.textContent = lang.how;
+          aboutList.innerHTML = "";
+          lang.tips.forEach((t) => {
+            const li = document.createElement("li");
+            li.textContent = t;
+            aboutList.appendChild(li);
+          });
+          aboutDev.textContent = lang.dev + ": A.EMRE CANASLAN";
+          aboutRights.textContent = "© 2026 " + lang.rights;
+
+          const R = RESET[lang.code];
+          resetAsk.textContent = R.ask;
+          resetYes.textContent = R.yes;
+          resetNo.textContent = R.no;
+
+          langBtn.innerHTML =
+            flagHtml(lang.code) + "<span>" + lang.code + "</span>";
+          langMenu
+            .querySelectorAll(".lang-item")
+            .forEach((b) =>
+              b.classList.toggle("active", b.dataset.code === lang.code),
+            );
+
+          updateHi();
+          renderMsg();
+        }
+        function setLang(l) {
+          lang = l;
+          try {
+            localStorage.setItem("dino_lang", l.code);
+          } catch (e) {}
+          applyLang();
         }
 
-        function stopMusic() {
-          musicPlaying = false;
-          clearInterval(musicTimer);
+        function openMenu() {
+          if (confirmOpen) closeConfirm();
+          menuOpen = true;
+          langMenu.classList.add("open");
+          langBtn.setAttribute("aria-expanded", "true");
+        }
+        function closeMenu() {
+          menuOpen = false;
+          langMenu.classList.remove("open");
+          langBtn.setAttribute("aria-expanded", "false");
         }
 
+        LANGS.forEach((l) => {
+          const b = document.createElement("div");
+          b.className = "lang-item";
+          b.setAttribute("role", "option");
+          b.dataset.code = l.code;
+          b.innerHTML = flagHtml(l.code) + "<span>" + l.name + "</span>";
+          b.addEventListener("click", (e) => {
+            e.stopPropagation();
+            setLang(l);
+            closeMenu();
+          });
+          langMenu.appendChild(b);
+        });
+        langBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          menuOpen ? closeMenu() : openMenu();
+        });
+        document.addEventListener("click", closeMenu);
+
+        function syncPause() {
+          pauseBtn.disabled = !running;
+          document.getElementById("pauseText").textContent = paused
+            ? lang.resume
+            : lang.pause;
+          document.getElementById("pauseIcon").textContent = paused ? "▶" : "⏸";
+        }
+        function setPaused(v) {
+          if (v && !running) return;
+          paused = v;
+          setMsg(v ? "paused" : "");
+          syncPause();
+        }
+        pauseBtn.addEventListener("click", () => {
+          setPaused(!paused);
+          pauseBtn.blur();
+        });
+
+        function openAbout() {
+          if (menuOpen) closeMenu();
+          if (confirmOpen) closeConfirm();
+          aboutOpen = true;
+          aboutEl.hidden = false;
+          aboutClose.focus();
+        }
+        function closeAbout() {
+          aboutOpen = false;
+          aboutEl.hidden = true;
+          if (document.activeElement && document.activeElement.blur)
+            document.activeElement.blur();
+        }
+        aboutBtn.addEventListener("click", openAbout);
+        aboutClose.addEventListener("click", closeAbout);
+        aboutEl.addEventListener("click", (e) => {
+          if (e.target === aboutEl) closeAbout();
+        });
+        document.addEventListener("keydown", (e) => {
+          if (!aboutOpen) return;
+          if (e.key === "Escape") closeAbout();
+          else if (e.key === "Tab") {
+            e.preventDefault();
+            aboutClose.focus();
+          }
+        });
+
+        function openConfirm() {
+          if (menuOpen) closeMenu();
+          confirmOpen = true;
+          resetConfirm.hidden = false;
+          resetNo.focus();
+        }
+        function closeConfirm() {
+          confirmOpen = false;
+          resetConfirm.hidden = true;
+          if (
+            document.activeElement &&
+            document.activeElement.closest &&
+            document.activeElement.closest("#topleft")
+          )
+            document.activeElement.blur();
+        }
+        function doReset() {
+          highScore = 0;
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch (e) {}
+          reset();
+          running = false;
+          gameOver = false;
+          paused = false;
+          syncPause();
+          updateHi();
+          setMsg("start");
+          closeConfirm();
+          document.documentElement.setAttribute("data-theme", "light");
+          refreshThemeColors();
+        }
+        resetBtn.addEventListener("click", () => {
+          confirmOpen ? closeConfirm() : openConfirm();
+        });
+        resetYes.addEventListener("click", doReset);
+        resetNo.addEventListener("click", closeConfirm);
+        document.getElementById("topleft").addEventListener("keydown", (e) => {
+          if (e.key === "Escape") closeConfirm();
+        });
+
+        applyLang();
+        requestAnimationFrame(refreshThemeColors);
+
+        // ===== SES BUTONU =====
         const soundBtn = document.getElementById("soundBtn");
         function renderSound() {
           document.getElementById("soundIcon").textContent = soundOn
@@ -3098,24 +1907,14 @@
           document.getElementById("soundText").textContent = soundOn
             ? lang.sound
             : lang.soundOn;
-          soundBtn.setAttribute(
-            "aria-label",
-            soundOn ? lang.sound : lang.soundOn,
-          );
-          soundBtn.title = soundOn ? lang.sound : lang.soundOn;
         }
         soundBtn.addEventListener("click", () => {
           soundOn = !soundOn;
           try {
-            localStorage.setItem("kangu_sound", soundOn ? "1" : "0");
+            localStorage.setItem("dino_sound", soundOn ? "1" : "0");
           } catch (e) {}
           renderSound();
-          if (soundOn) {
-            sfx.ping();
-            if (running && !paused) startMusic();
-          } else {
-            stopMusic();
-          }
+          if (soundOn) sfx.ping();
           soundBtn.blur();
         });
         document.addEventListener("visibilitychange", () => {
@@ -3124,61 +1923,949 @@
           else audioCtx.resume();
         });
         renderSound();
+        // ===== CANVAS BOYUTLANDIRMA =====
+        let VW = 600,
+          VH = 150,
+          narrowMode = null;
+        function fitCanvas() {
+          const narrow = window.innerWidth < 700;
+          narrowMode = narrow;
 
-        // ===== BAŞLANGIÇ / BİTİŞ KARTI =====
-        function renderCard() {
-          const card = document.getElementById("card");
-          if (!card) return;
-          const isNewRecord = msgKey === "rec";
-          const ended = msgKey === "over" || msgKey === "rec";
-          const sc = document.getElementById("cardScore");
+          // Safe-area ölçümü
+          const probe = document.createElement("div");
+          probe.style.cssText =
+            "position:fixed;top:0;left:0;width:env(safe-area-inset-left,0px);height:env(safe-area-inset-top,0px);pointer-events:none;visibility:hidden;";
+          document.body.appendChild(probe);
+          const saL = probe.offsetWidth || 0;
+          document.body.removeChild(probe);
 
-          if (isNewRecord) {
-            // Yeni rekor → büyük puan
-            sc.textContent = pad(score);
-            sc.classList.remove("hidden");
+          const isLandscape = window.innerWidth > window.innerHeight;
+
+          // Mobil yatayda HUD'u içeri çek (safe-area + minimum 14px)
+          if (narrow && isLandscape) {
+            const pad = Math.max(saL + 14, 14);
+            document.getElementById("topleft").style.left = pad + "px";
+            document.getElementById("topright").style.right = pad + "px";
           } else {
-            // Normal oyun sonu VEYA başlangıç → puan gösterme
-            sc.textContent = "";
-            sc.classList.add("hidden");
+            document.getElementById("topleft").style.left = "";
+            document.getElementById("topright").style.right = "";
           }
-          document.getElementById("cardBtn").textContent = ended ? "↻" : "▶";
-          card.classList.toggle("off", !msgKey);
+
+          // ===== TÜM EKRANLARDA: TAM EKRAN OYUN =====
+          canvas.style.top = "0px";
+          canvas.style.left = "0px";
+          canvas.style.right = "0px";
+          canvas.style.width = "100%";
+          canvas.style.height = "100%";
+
+          const cssW = window.innerWidth;
+          const cssH = window.innerHeight;
+          const aspect = cssW / cssH;
+
+          // ===== DİKEY MOBİL (portrait): özel strateji =====
+          // Dikeyde ekran çok uzun; oyun alanı üstte, alt toprak bandı kalın olur.
+          if (aspect < 0.85 && cssW < 700) {
+            // VW'yi ekran genişliğine göre ayarla; dino ekranın ~%10'u olsun
+            VW = 300;
+            // VH'yi orandan türet → canvas ekranı tam kaplar
+            VH = Math.round(VW / aspect);
+
+            // Çok uzun ekranlarda VH'yi sınırla ki zemin çok yukarıda kalmasın
+            const maxVH = Math.round(VW / 0.55); // min aspect 0.55
+            if (VH > maxVH) VH = maxVH;
+
+            canvas.width = VW * RENDER_SCALE;
+            canvas.height = VH * RENDER_SCALE;
+            canvas.style.aspectRatio = VW + " / " + VH;
+
+            // Dikeyde zemin çizgisini ekranın %62'sine koy (üstte ferah gökyüzü)
+            GROUND_LINE = Math.round(VH * 0.62);
+            GROUND_Y = GROUND_LINE - 25;
+
+            if (typeof dino !== "undefined") {
+              dino.y = GROUND_Y;
+              dino.x = Math.round(VW * DINO_X_RATIO);
+            }
+
+            for (const o of obstacles) {
+              if (o.type === "cactus") o.y = GROUND_Y + (25 - o.h);
+            }
+            if (typeof initStars === "function") initStars();
+            if (typeof initClouds === "function") initClouds();
+            draw();
+            return;
+          }
+
+          // ===== YATAY / MASAÜSTÜ: dino piksel boyutu hedefi =====
+          let dinoTargetPx;
+          const isLandscapeNow = window.innerWidth > window.innerHeight;
+          if (isLandscapeNow && cssH < 600) {
+            // Mobil yatay: dino'yu biraz büyüt → VH küçülür → zemin aşağı iner
+            dinoTargetPx = 52;
+          } else if (cssH < 500) {
+            dinoTargetPx = 44;
+          } else if (cssH < 800) {
+            dinoTargetPx = 46;
+          } else if (cssH < 1200) {
+            dinoTargetPx = 52;
+          } else {
+            dinoTargetPx = 60;
+          }
+
+          VH = Math.round(cssH / (dinoTargetPx / 25));
+          VW = Math.round(VH * aspect);
+
+          if (VW > 900) VW = 900;
+          if (VW < 360) VW = 360;
+
+          canvas.width = VW * RENDER_SCALE;
+          canvas.height = VH * RENDER_SCALE;
+          canvas.style.aspectRatio = VW + " / " + VH;
+
+          // Zemin çizgisi: alt kısımda toprak bandı için yer bırak
+          // Mobil yatayda (kısa ekran) zemini belirgin şekilde aşağı al
+          const isMobileLandscape =
+            window.innerWidth > window.innerHeight && cssH < 600;
+          GROUND_LINE = Math.round(VH * (isMobileLandscape ? 0.86 : 0.72));
+          GROUND_Y = GROUND_LINE - 25;
+
+          if (typeof dino !== "undefined") {
+            dino.y = GROUND_Y;
+            dino.x = Math.round(VW * DINO_X_RATIO);
+          }
+          for (const o of obstacles) {
+            if (o.type === "cactus") o.y = GROUND_Y + (25 - o.h);
+          }
+
+          // VH değiştiyse bulutları ve yıldızları yeni alana göre yeniden dağıt
+          if (typeof initStars === "function") initStars();
+          if (typeof initClouds === "function") initClouds();
+
+          draw();
         }
 
-        document
-          .getElementById("cardBtn")
-          .addEventListener("pointerdown", (e) => {
-            e.stopPropagation();
-            if (paused) setPaused(false);
-            else jump();
-          });
-        renderCard();
-        document.getElementById("cardBtn").addEventListener("touchstart", (e) => {
-          e.preventDefault();
-          if (paused) setPaused(false);
-          else jump();
+        window.addEventListener("resize", fitCanvas);
+        window.addEventListener("orientationchange", () =>
+          setTimeout(fitCanvas, 150),
+        );
+
+        // ===== SABİTLER =====
+        let GROUND_Y = 120;
+        let GROUND_LINE = GROUND_Y + 25;
+        const GRAVITY_UP = 0.55;
+        const GRAVITY_DOWN = 0.85;
+        const JUMP_V = -10.2;
+        // Dino'nun X konumu: VW'nin %15'i (KanguRun ile aynı)
+        const DINO_X_RATIO = 0.15;
+
+        // ===== DURUM =====
+        let dino = { x: 90, y: GROUND_Y, vy: 0, w: 23, h: 25, jumping: false };
+        let obstacles = [];
+        let speed = 5;
+        let score = 0;
+        let running = false;
+        let gameOver = false;
+        let frame = 0;
+        let animFrame = 0;
+        let lives = 2;
+        let invuln = 0;
+        let dust = [];
+        let groundOffset = 0;
+        let isNight = false;
+        let nightT = 0;
+        let hillFar = 0,
+          hillNear = 0;
+        let stars = [];
+        let clouds = [];
+        let nextSpawnFrame = 60;
+        const livesEl = document.getElementById("lives");
+
+        // Koşan dino silüeti (DINO_GRID_A → SVG path değil, rect'ler)
+        const DINO_LIFE_SVG = (() => {
+          const grid = [
+            "..............XXXXXXXX.",
+            ".............XXXXXXXXXX",
+            ".............XX.XXXXXXX",
+            ".............XXXXXXXXXX",
+            ".............XXXXXXXXXX",
+            ".............XXXXXXXXXX",
+            ".............XXXXXXXXXX",
+            "...X........XXXXXXXXX..",
+            "...X.......XXXXXX......",
+            "...XX....XXXXXXXXXX....",
+            "...XXX...XXXXXXXXXX....",
+            "...XXXXXXXXXXXXXX......",
+            "...XXXXXXXXXXXXXX......",
+            "....XXXXXXXXXXXXX......",
+            ".....XXXXXXXXXXX.......",
+            "......XXXXXXXXXX.......",
+            ".......XXXXXXXX........",
+            "........XXXXXX.........",
+            "........XX..XX.........",
+            "........XX..XX.........",
+            "........XX..XX.........",
+            ".......XXX..XX.........",
+          ];
+          const w = grid[0].length,
+            h = grid.length;
+          let rects = "";
+          for (let r = 0; r < h; r++) {
+            const row = grid[r];
+            let c = 0;
+            while (c < w) {
+              if (row[c] === ".") {
+                c++;
+                continue;
+              }
+              let start = c;
+              while (c < w && row[c] === "X") c++;
+              rects +=
+                '<rect fill="currentColor" x="' +
+                start +
+                '" y="' +
+                r +
+                '" width="' +
+                (c - start) +
+                '" height="1"/>';
+            }
+          }
+          return (
+            '<svg viewBox="0 0 ' +
+            w +
+            " " +
+            h +
+            '" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" preserveAspectRatio="xMidYMax meet">' +
+            rects +
+            "</svg>"
+          );
+        })();
+
+        function renderLives() {
+          let h = "";
+          for (let i = 0; i < 2; i++)
+            h +=
+              '<span class="hp' +
+              (i < lives ? "" : " off") +
+              '">' +
+              DINO_LIFE_SVG +
+              "</span>";
+          livesEl.innerHTML = h;
+        }
+
+        const CLOUD_TYPES = [
+          [
+            [0.15, 0.05, 0.24],
+            [0.45, -0.08, 0.28],
+            [0.75, 0.05, 0.22],
+            [-0.15, 0.15, 0.18],
+            [1.0, 0.15, 0.18],
+          ],
+        ];
+
+        function initStars() {
+          stars = [];
+          // Yıldızlar sadece gökyüzünde; dağ siluetlerinin üstünde bitsin.
+          const skyMax = Math.max(40, GROUND_LINE - 80);
+
+          for (let i = 0; i < 200; i++) {
+            // 3 katman: %60 küçük/soluk, %30 orta, %10 büyük/parlak
+            const r = Math.random();
+            let size, baseAlpha;
+
+            if (r < 0.6) {
+              // Uzak/küçük yıldızlar (çoğunluk)
+              size = 1;
+              baseAlpha = 0.4;
+            } else if (r < 0.9) {
+              // Orta yıldızlar
+              size = Math.random() < 0.5 ? 1 : 2;
+              baseAlpha = 0.7;
+            } else {
+              // Parlak yıldızlar (azınlık)
+              size = 2;
+              baseAlpha = 1.0;
+            }
+
+            stars.push({
+              x: Math.random() * VW,
+              y: 6 + Math.random() * skyMax,
+              phase: Math.random() * Math.PI * 2,
+              size: size,
+              baseAlpha: baseAlpha,
+            });
+          }
+        }
+
+        function initClouds() {
+          // Bulutlar gündüz gökyüzünün üst-orta kısmında → güzel kompozisyon.
+          // Gece zaten tamamen kaybolacaklar.
+          const skyH = Math.max(60, GROUND_LINE - 20);
+          const s = skyH / 100; // referans 100 birim yükseklik
+          clouds = [
+            { x: 90, y: 38 * s, w: 50, type: 0, speed: 1.0, layer: 0 },
+            { x: 300, y: 52 * s, w: 42, type: 0, speed: 0.9, layer: 0 },
+            { x: 150, y: 22 * s, w: 36, type: 0, speed: 0.6, layer: 1 },
+            { x: 440, y: 30 * s, w: 40, type: 0, speed: 0.7, layer: 1 },
+            { x: 520, y: 60 * s, w: 34, type: 0, speed: 0.8, layer: 0 },
+          ];
+        }
+        initStars();
+        initClouds();
+
+        function reset() {
+          dino.y = GROUND_Y;
+          dino.x = Math.round(VW * DINO_X_RATIO);
+          dino.vy = 0;
+          dino.jumping = false;
+          obstacles = [];
+          speed = 5;
+          score = 0;
+          frame = 0;
+          nextSpawnFrame = 60;
+          gameOver = false;
+          isNight = false;
+          nightT = 0;
+          // Tema'yı gündüze döndür
+          document.documentElement.setAttribute("data-theme", "light");
+          refreshThemeColors();
+          hillFar = 0;
+          hillNear = 0;
+          lives = 2;
+          invuln = 0;
+          dust = [];
+          renderLives();
+          initStars();
+          initClouds();
+        }
+
+        function jump() {
+          if (paused) return;
+          if (!running) {
+            startGame();
+            return;
+          }
+          if (!dino.jumping && !gameOver) {
+            dino.vy = JUMP_V;
+            dino.jumping = true;
+            sfx.jump();
+          }
+        }
+
+        function startGame() {
+          reset();
+          running = true;
+          paused = false;
+          syncPause();
+          setMsg("");
+        }
+
+        function spawnObstacle() {
+          const isBird = Math.random() < 0.25 && score > 300;
+          if (isBird) {
+            const kind = Math.random();
+            let birdY;
+            if (kind < 0.5) {
+              // LOW: yere yakın — zıplamalı (küçük varyasyon)
+              birdY = GROUND_Y - (25 + Math.random() * 10); // -25 ile -35
+            } else {
+              // HIGH: yüksek — zıplamamalı (küçük varyasyon)
+              birdY = GROUND_Y - (65 + Math.random() * 15); // -65 ile -80
+            }
+            obstacles.push({
+              type: "bird",
+              x: 600,
+              y: birdY,
+              w: 41,
+              h: 31,
+            });
+          } else {
+            const kind = Math.random();
+            if (kind < 0.3) {
+              obstacles.push({
+                type: "cactus",
+                cluster: true,
+                x: 600,
+                y: GROUND_Y + (25 - 42),
+                w: 33,
+                h: 42,
+              });
+            } else if (kind < 0.6) {
+              obstacles.push({
+                type: "cactus",
+                cluster: false,
+                px: 4,
+                x: 600,
+                y: GROUND_Y + (25 - 48),
+                w: 32,
+                h: 48,
+              });
+            } else {
+              obstacles.push({
+                type: "cactus",
+                cluster: false,
+                px: 3,
+                x: 600,
+                y: GROUND_Y + (25 - 36),
+                w: 24,
+                h: 36,
+              });
+            }
+          }
+        }
+        function scheduleNextSpawn() {
+          const base = Math.max(38, Math.floor(85 - speed * 3));
+          nextSpawnFrame = frame + base + Math.floor(Math.random() * 25);
+        }
+
+        function update() {
+          frame++;
+          animFrame++;
+
+          // ===== FİZİK (asimetrik yerçekimi) =====
+          if (dino.jumping) {
+            dino.vy += dino.vy < 0 ? GRAVITY_UP : GRAVITY_DOWN;
+          }
+          dino.y += dino.vy;
+
+          // Yere iniş
+          if (dino.y >= GROUND_Y) {
+            dino.y = GROUND_Y;
+            dino.vy = 0;
+            const wasJumping = dino.jumping;
+            dino.jumping = false;
+            if (wasJumping) {
+              sfx.land();
+              for (let i = 0; i < 8; i++) {
+                dust.push({
+                  x: dino.x + 4 + Math.random() * 14,
+                  y: GROUND_LINE - 1,
+                  vx: -speed * 0.5 - Math.random() * 1.8,
+                  vy: -Math.random() * 1.8,
+                  life: 22,
+                  max: 22,
+                });
+              }
+            }
+          }
+
+          // Toz
+          for (const d of dust) {
+            d.x += d.vx;
+            d.y += d.vy;
+            d.vy += 0.08;
+            d.life--;
+          }
+          dust = dust.filter((d) => d.life > 0);
+
+          if (frame >= nextSpawnFrame) {
+            spawnObstacle();
+            scheduleNextSpawn();
+          }
+
+          for (let o of obstacles) o.x -= speed;
+          obstacles = obstacles.filter((o) => o.x > -30);
+
+          const before = Math.floor(score / 100);
+          score += 0.15;
+          if (Math.floor(score / 100) > before) sfx.ping();
+          speed += 0.0015;
+
+          groundOffset = (groundOffset - speed) % 24;
+          const night = Math.floor(score / 500) % 2 === 1;
+          if (night !== isNight) {
+            isNight = night;
+            if (night) sfx.night();
+            else sfx.day();
+            // CSS'in tema durumunu güncelle → HUD ve mesaj otomatik uyum sağlar
+            document.documentElement.setAttribute(
+              "data-theme",
+              night ? "dark" : "light",
+            );
+            // Canvas renklerini de yeni temaya göre güncelle
+            refreshThemeColors();
+          }
+          nightT = Math.max(
+            0,
+            Math.min(1, nightT + (isNight ? 0.012 : -0.012)),
+          );
+
+          hillFar += speed * 0.12;
+          hillNear += speed * 0.3;
+          for (const c of clouds) {
+            const spd =
+              (0.2 + speed * 0.04) * c.speed * (c.layer === 1 ? 0.5 : 1);
+            c.x -= spd;
+            const margin = c.w * 1.5 + 40;
+            if (c.x < -margin) c.x = VW + margin;
+          }
+
+          const dh = 37; // dino görsel yüksekliği (22 × 1.7)
+          const dy = dino.y - 12; // kafa hizası (görselin üst kenarı)
+          const pad = 2;
+          if (invuln > 0) invuln--;
+          for (let o of obstacles) {
+            if (invuln > 0) break;
+            if (
+              dino.x + pad < o.x + o.w - pad &&
+              dino.x + dino.w - pad > o.x + pad &&
+              dy + pad < o.y + o.h - pad &&
+              dy + dh - pad > o.y + pad
+            ) {
+              lives--;
+              sfx.hit();
+              renderLives();
+              if (lives <= 0) {
+                endGame();
+              } else {
+                invuln = 90;
+                obstacles = obstacles.filter((x) => x !== o);
+              }
+              break;
+            }
+          }
+        }
+
+        function endGame() {
+          running = false;
+          gameOver = true;
+          syncPause();
+          if (Math.floor(score) % 10000 > highScore) {
+            highScore = Math.floor(score) % 10000;
+            saveHigh(highScore);
+            updateHi();
+            setMsg("rec");
+            sfx.record();
+          } else {
+            setMsg("over");
+            sfx.over();
+          }
+        }
+
+        // ===== KOŞU GRID'LERİ =====
+        const DINO_GRID_A = [
+          "..............XXXXXXXX.",
+          ".............XXXXXXXXXX",
+          ".............XX.XXXXXXX",
+          ".............XXXXXXXXXX",
+          ".............XXXXXXXXXX",
+          ".............XXXXXXXXXX",
+          ".............XXXXXXXXXX",
+          "...X........XXXXXXXXX..",
+          "...X.......XXXXXX......",
+          "...XX....XXXXXXXXXX....",
+          "...XXX...XXXXXXXXXX....",
+          "...XXXXXXXXXXXXXX......",
+          "...XXXXXXXXXXXXXX......",
+          "....XXXXXXXXXXXXX......",
+          ".....XXXXXXXXXXX.......",
+          "......XXXXXXXXXX.......",
+          ".......XXXXXXXX........",
+          "........XXXXXX.........",
+          "........XX..XX.........",
+          "........XX..XX.........",
+          "........XX..XX.........",
+          ".......XXX..XX.........",
+        ];
+        const DINO_GRID_B = [
+          "..............XXXXXXXX.",
+          ".............XXXXXXXXXX",
+          ".............XX.XXXXXXX",
+          ".............XXXXXXXXXX",
+          ".............XXXXXXXXXX",
+          ".............XXXXXXXXXX",
+          ".............XXXXXXXXXX",
+          "...X........XXXXXXXXX..",
+          "...X.......XXXXXX......",
+          "...XX....XXXXXXXXXX....",
+          "...XXX...XXXXXXXXXX....",
+          "...XXXXXXXXXXXXXX......",
+          "...XXXXXXXXXXXXXX......",
+          "....XXXXXXXXXXXXX......",
+          ".....XXXXXXXXXXX.......",
+          "......XXXXXXXXXX.......",
+          ".......XXXXXXXX........",
+          "........XXXXXX.........",
+          "........XX..XX.........",
+          "........XX..XX.........",
+          "........XX..XX.........",
+          "........XX..XXX........",
+        ];
+
+        // ===== ZIPLAMA GRID'İ (tek kare) =====
+        // Gövde + bacaklar BİTİŞİK, ayaklar belirgin, boşluk yok
+        const DINO_JUMP = [
+          ".............XXXXXXXX..",
+          "............XXXXXXXXXX.",
+          "............XX.XXXXXXX.",
+          "............XXXXXXXXXX.",
+          "............XXXXXXXXXX.",
+          "............XXXXXXXXXX.",
+          "............XXXXXXXXXX.",
+          "..XX........XXXXXXXXX..",
+          "..XX.......XXXXXX......",
+          "..XXX.....XXXXXXXXXX...",
+          "..XXXX...XXXXXXXXXX....",
+          "..XXXXXXXXXXXXXXX......",
+          "..XXXXXXXXXXXXXXX......",
+          "...XXXXXXXXXXXXXX......",
+          "....XXXXXXXXXXXXX......",
+          ".....XXXXXXXXXXX.......",
+          "......XXXXXXXXX........",
+          "......XXXXXXXXX........",
+          "......XXX.XXX..........",
+          "......XXX.XXX..........",
+          ".....XXX...XXX.........",
+          "....XXX.....XXX........",
+        ];
+        const DINO_PX = 1.7;
+
+        function drawDino(fg) {
+          const grid = dino.jumping
+            ? DINO_JUMP
+            : Math.floor(animFrame / 5) % 2 === 0
+              ? DINO_GRID_A
+              : DINO_GRID_B;
+          const gw = grid[0].length * DINO_PX;
+          const gh = grid.length * DINO_PX;
+          const ox = dino.x - (gw - dino.w) / 2;
+          const oy = dino.y + dino.h - gh;
+          drawPixels(grid, ox, oy, DINO_PX, fg);
+        }
+
+        const CACTUS_GRID = [
+          "...XXX..",
+          "...XXX..",
+          "X..XXX..",
+          "X..XXX..",
+          "XX.XXX..",
+          "XXXXXX.X",
+          ".XXXXX.XX",
+          "...XXXXXX",
+          "...XXX..",
+          "...XXX..",
+          "...XXX..",
+          "...XXX..",
+        ];
+
+        function drawPixels(grid, ox, oy, px, fg) {
+          ctx.fillStyle = fg;
+          const S = RENDER_SCALE;
+          for (let r = 0; r < grid.length; r++) {
+            const row = grid[r];
+            const y0 = Math.round((oy + r * px) * S) / S;
+            const y1 = Math.round((oy + (r + 1) * px) * S) / S;
+            for (let c = 0; c < row.length; c++) {
+              if (row[c] === ".") continue;
+              const x0 = Math.round((ox + c * px) * S) / S;
+              const x1 = Math.round((ox + (c + 1) * px) * S) / S;
+              ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+            }
+          }
+        }
+
+        function drawCactus(o, fg) {
+          if (o.cluster) {
+            drawPixels(CACTUS_GRID, o.x, o.y + 6, 3, fg);
+            drawPixels(CACTUS_GRID, o.x + 11, o.y, 3, fg);
+            drawPixels(CACTUS_GRID, o.x + 22, o.y + 8, 3, fg);
+            return;
+          }
+          drawPixels(CACTUS_GRID, o.x, o.y, o.px, fg);
+        }
+
+        const BIRD_UP = [
+          "................X......",
+          "...............XX......",
+          ".............XXXX......",
+          "............XXXXXX.....",
+          "...........XXXXXXX.....",
+          ".....XXX...XXXXXXXX....",
+          "....X.XXX.XXXXXXXXXX...",
+          ".XXXXXXXXXXXXXXXXXX....",
+          "...XXXXXXXXXXXXXXXXXXX.",
+          "........XXXXXXXXXXXXX..",
+          ".........XXXXXXXXX.....",
+          ".......................",
+          ".......................",
+          ".......................",
+          ".......................",
+          ".......................",
+          ".......................",
+        ];
+        const BIRD_DOWN = [
+          ".......................",
+          ".......................",
+          ".......................",
+          ".......................",
+          ".......................",
+          ".....XXX...............",
+          "....X.XXX..XXXXX.......",
+          ".XXXXXXXXXXXXXXXXXX....",
+          "...XXXXXXXXXXXXXXXXXXX.",
+          "........XXXXXXXXXXXXX..",
+          ".........XXXXXXXXX.....",
+          "..........XXXXXXXXX....",
+          "...........XXXXXXXX....",
+          "............XXXXXX.....",
+          ".............XXXXX.....",
+          "..............XXX......",
+          "................X......",
+        ];
+
+        function drawBird(o, fg) {
+          const grid =
+            Math.floor(animFrame / 8) % 2 === 0 ? BIRD_UP : BIRD_DOWN;
+          drawPixels(grid, o.x, o.y, 1.8, fg);
+        }
+
+        function hexRgb(c) {
+          if (c.startsWith("rgb")) {
+            const m = c.match(/\d+/g);
+            return [+m[0], +m[1], +m[2]];
+          }
+          return [
+            parseInt(c.slice(1, 3), 16),
+            parseInt(c.slice(3, 5), 16),
+            parseInt(c.slice(5, 7), 16),
+          ];
+        }
+        function mix(a, b, t) {
+          const x = hexRgb(a),
+            y = hexRgb(b);
+          return (
+            "rgb(" +
+            x.map((v, i) => Math.round(v + (y[i] - v) * t)).join(",") +
+            ")"
+          );
+        }
+
+        function hills(off, base, amp, color, alpha) {
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.moveTo(0, GROUND_LINE);
+          for (let x = 0; x <= VW; x += 6) {
+            const y =
+              base -
+              Math.sin((x + off) * 0.012) * amp -
+              Math.sin((x + off) * 0.031) * amp * 0.4;
+            ctx.lineTo(x, y);
+          }
+          ctx.lineTo(VW, GROUND_LINE);
+          ctx.closePath();
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+
+        function drawSky() {
+          const n = nightT;
+          const skyTop = mix("#f7f7f7", "#0d0e10", n);
+          const skyBottom = mix("#e8eaed", "#1a1b1e", n);
+          const sky = ctx.createLinearGradient(0, 0, 0, GROUND_LINE);
+          sky.addColorStop(0, skyTop);
+          sky.addColorStop(1, skyBottom);
+          ctx.fillStyle = sky;
+          ctx.fillRect(0, 0, VW, GROUND_LINE);
+
+          if (n > 0.02) {
+            ctx.fillStyle = "#ffffff";
+            for (const st of stars) {
+              const tw =
+                0.4 + 0.6 * Math.abs(Math.sin(animFrame * 0.04 + st.phase));
+              ctx.globalAlpha = n * st.baseAlpha * tw;
+              ctx.fillRect(st.x, st.y, st.size, st.size);
+            }
+            ctx.globalAlpha = 1;
+          }
+
+          // Bulutlar: gece boyunca yumuşak geçişle kaybolur.
+          // nightT 0 → 0.5 arası azalır, 0.5 → 1 arası tamamen yok.
+          const cloudFade = Math.max(0, 1 - n * 2); // n=0 → 1.0, n=0.5 → 0, n=1 → 0
+          if (cloudFade > 0.01) {
+            const cloudAlpha = (0.15 + 0.05 * (1 - n)) * cloudFade;
+            const cloudColor = mix("#202124", "#e8eaed", n);
+            for (const c of clouds) {
+              const isFar = c.layer === 1;
+              ctx.globalAlpha = cloudAlpha * (isFar ? 0.5 : 1);
+              ctx.fillStyle = cloudColor;
+              ctx.beginPath();
+              CLOUD_TYPES[c.type].forEach((q) => {
+                const bx = c.x + c.w * q[0];
+                const by = c.y + c.w * q[1];
+                ctx.moveTo(bx + c.w * q[2], by);
+                ctx.arc(bx, by, c.w * q[2], 0, Math.PI * 2);
+              });
+              ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+          }
+
+          // ===== DOLUNAY (retro, küçük, krater yok) =====
+          // Yatayda tam orta, dikeyde gökyüzünün üst-orta kısmı.
+          // Dikey mobilde ay büyütülür + elips yerine gerçek daire çizilir.
+          const moonAlpha = Math.max(0, Math.min(1, (n - 0.3) / 0.7));
+          if (moonAlpha > 0.01) {
+            // Dikey mobil tespiti (fitCanvas ile aynı kriter)
+            const isPortraitMobile =
+              window.innerWidth / window.innerHeight < 0.85 &&
+              window.innerWidth < 700;
+
+            // Boyut: dikeyde daha büyük, yatayda daha küçük
+            const moonR = isPortraitMobile
+              ? Math.max(11, VW * 0.055) // dikey: belirgin, yuvarlak
+              : Math.max(5, VW * 0.022); // yatay/masaüstü: küçük, retro
+
+            // Konum: yatayda tam orta, dikeyde gökyüzünün üst-orta kısmı
+            const moonX = VW * 0.5;
+            const moonY = Math.max(moonR + 12, GROUND_LINE * 0.32);
+
+            // Canvas aspect farkından doğan elips bozulmasını düzelt:
+            // ctx.setTransform uniform ölçekliyor ama canvas aspect oranı farklı olabilir.
+            // Gerçek piksel oranı: yatay = cssW/VW, dikey = cssH/VH
+            const cssW = window.innerWidth;
+            const cssH = window.innerHeight;
+            const scaleX = cssW / VW;
+            const scaleY = cssH / VH;
+            const ellipseY = moonR * (scaleX / scaleY); // dikey yarıçap düzeltmesi
+
+            ctx.globalAlpha = moonAlpha;
+            ctx.fillStyle = "#fff8e7";
+            ctx.beginPath();
+            if (Math.abs(ellipseY - moonR) > 0.5) {
+              // Bozulma varsa elips çiz (dikey mobil)
+              ctx.ellipse(moonX, moonY, moonR, ellipseY, 0, 0, Math.PI * 2);
+            } else {
+              // Bozulma yoksa normal daire (masaüstü/yatay)
+              ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+            }
+            ctx.fill();
+            ctx.globalAlpha = 1;
+          }
+
+          const hillColor = mix("#535353", "#9aa0a6", n);
+          hills(hillFar, GROUND_LINE - 45, 18, hillColor, 0.1);
+          hills(hillNear, GROUND_LINE - 25, 12, hillColor, 0.16);
+        }
+
+        function draw() {
+          ctx.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, 0, 0);
+          // Tema renklerini her frame'de CSS'ten oku
+          refreshThemeColors();
+          const fg = themeFg;
+          const bg = themeBg;
+
+          ctx.fillStyle = bg;
+          ctx.fillRect(0, 0, VW, VH);
+          drawSky();
+
+          // 1. KATMAN: Zemin çizgisi (ana, koyu)
+          ctx.strokeStyle = fg;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(0, GROUND_LINE);
+          ctx.lineTo(VW, GROUND_LINE);
+          ctx.stroke();
+
+          // 2. KATMAN: İnce toprak bandı (hafif koyu) — canvas altına kadar uzat
+          ctx.globalAlpha = 0.2;
+          ctx.fillStyle = fg;
+          ctx.fillRect(0, GROUND_LINE + 2, VW, VH - GROUND_LINE - 2);
+          ctx.globalAlpha = 1;
+
+          // 3. KATMAN: Soluk çizgiler (doku) — toprak bandı boyunca
+          ctx.globalAlpha = 0.3;
+          for (let gx = 0; gx < VW; gx += 40) {
+            ctx.fillRect(gx, GROUND_LINE + 5, 8, 1);
+          }
+          ctx.globalAlpha = 1;
+
+          // 4. KATMAN: İnce ikinci çizgi (daha koyu referans çizgisi)
+          ctx.globalAlpha = 0.15;
+          ctx.fillStyle = fg;
+          ctx.fillRect(0, GROUND_LINE + 12, VW, 1);
+          ctx.globalAlpha = 1;
+
+          // Gölge
+          const lift = GROUND_Y - dino.y;
+          if (lift >= 0) {
+            const shadowW = Math.max(5, 11 - lift * 0.1);
+            const shadowAlpha = Math.max(0.05, 0.3 - lift * 0.012);
+            ctx.globalAlpha = shadowAlpha;
+            ctx.fillStyle = fg;
+            ctx.beginPath();
+            ctx.ellipse(
+              dino.x + dino.w / 2,
+              GROUND_LINE + 1,
+              shadowW,
+              2,
+              0,
+              0,
+              Math.PI * 2,
+            );
+            ctx.fill();
+            ctx.globalAlpha = 1;
+          }
+
+          if (!(invuln > 0 && Math.floor(invuln / 5) % 2 === 0)) drawDino(fg);
+
+          // Toz
+          ctx.fillStyle = fg;
+          for (const d of dust) {
+            ctx.globalAlpha = (d.life / d.max) * 0.5;
+            ctx.fillRect(d.x, d.y, 2, 2);
+          }
+          ctx.globalAlpha = 1;
+
+          for (let o of obstacles) {
+            if (o.type === "cactus") drawCactus(o, fg);
+            else drawBird(o, fg);
+          }
+
+          curEl.textContent = pad(score);
+        }
+
+        function loop() {
+          if (running && !menuOpen && !confirmOpen && !aboutOpen && !paused)
+            update();
+          draw();
+          requestAnimationFrame(loop);
+        }
+
+        document.addEventListener("keydown", (e) => {
+          if (
+            menuOpen ||
+            confirmOpen ||
+            aboutOpen ||
+            (e.target.closest && e.target.closest("#topright, #topleft"))
+          )
+            return;
+          if (e.code === "KeyP") {
+            setPaused(!paused);
+            return;
+          }
+          if (paused) {
+            if (e.code === "Space" || e.code === "ArrowUp") e.preventDefault();
+            return;
+          }
+          if (e.code === "Space" || e.code === "ArrowUp") {
+            e.preventDefault();
+            jump();
+          }
+        });
+
+        // Hem dokunmatik (iPad/iPhone) hem fare (PC) desteği
+        canvas.addEventListener("pointerdown", () => jump());
+        canvas.addEventListener("touchstart", (e) => {
+          e.preventDefault(); // Tarayıcının zoom yapmasını engelle
+          jump();
         }, { passive: false });
+        canvas.addEventListener("mousedown", () => jump());
 
         renderLives();
-        fitCanvas();
-        draw();
-        loop();
-      })();
-    </script>
-    <script>
-      /* Flex gap desteği yoksa html.no-flex-gap sınıfını ekle.
-         Bu sınıf sadece eski iOS/Android cihazlarda aktif olur. */
-      (function () {
-        var el = document.createElement("div");
-        el.style.cssText = "display:flex;flex-direction:column;gap:1px;position:absolute;visibility:hidden;";
-        el.appendChild(document.createElement("div"));
-        document.body.appendChild(el);
-        var supported = el.scrollHeight === 2;
-        document.body.removeChild(el);
-        if (!supported) {
-          document.documentElement.classList.add("no-flex-gap");
-        }
+        requestAnimationFrame(() => {
+          fitCanvas();
+          loop();
+        });
       })();
     </script>
     <script>
@@ -3205,6 +2892,20 @@
         });
       }
     </script>
-
+    <script>
+      /* Flex gap desteği yoksa html.no-flex-gap sınıfını ekle.
+         Bu sınıf sadece eski iOS/Android cihazlarda aktif olur. */
+      (function () {
+        var el = document.createElement("div");
+        el.style.cssText = "display:flex;flex-direction:column;gap:1px;position:absolute;visibility:hidden;";
+        el.appendChild(document.createElement("div"));
+        document.body.appendChild(el);
+        var supported = el.scrollHeight === 2;
+        document.body.removeChild(el);
+        if (!supported) {
+          document.documentElement.classList.add("no-flex-gap");
+        }
+      })();
+    </script>
   </body>
 </html>
