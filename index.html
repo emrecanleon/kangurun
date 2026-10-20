@@ -855,30 +855,29 @@
       html.no-flex-gap #scoreRow .score-cur     { font-size: 10px; margin: 0 1px; }
       html.no-flex-gap #scoreRow .hp            { font-size: 10px; }
 
-      /* Dil menüsü */
+      /* Dil menüsü: genişlik, boşluklar ve font DinoRun ile aynı */
+      html.no-flex-gap #langMenu {
+        min-width: 150px;
+        padding: 6px;
+      }
+      html.no-flex-gap .lang-item {
+        padding: 7px 10px;
+        font-size: 13px;
+      }
       html.no-flex-gap .lang-item .flag,
       html.no-flex-gap .lang-item svg {
         flex-shrink: 0;
         margin-right: 8px;
         display: inline-block;
         vertical-align: middle;
+        width: 18px;
+        height: 12px;
       }
       html.no-flex-gap .lang-item span {
         white-space: nowrap;
         line-height: 1.2;
         display: inline-block;
         vertical-align: middle;
-      }
-      html.no-flex-gap #langMenu {
-        min-width: 110px;
-      }
-      html.no-flex-gap .lang-item {
-        padding: 4px 6px;
-        font-size: 11px;
-      }
-      html.no-flex-gap .lang-item svg {
-        width: 18px;
-        height: 12px;
       }
 
       /* Reset menüsü */
