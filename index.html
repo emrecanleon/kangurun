@@ -961,12 +961,15 @@
         bottom: 0;
         width: 100vw;
         height: 100vh;
-        display: flex;
         align-items: center;
         justify-content: center;
         background: rgba(0, 0, 0, 0.55);
         padding: 16px;
         box-sizing: border-box;
+      }
+      /* display: flex sadece hidden YOKKEN uygulanacak */
+      html.no-flex-gap #about:not([hidden]) {
+        display: flex;
       }
       html.no-flex-gap #aboutPanel {
         margin: auto;
