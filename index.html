@@ -832,29 +832,21 @@
         max-height: 34px;
       }
       html.no-flex-gap #scoreRow .hi-group {
-        margin-right: 3px;
+        margin-right: 1px; /* Boşluğu daralttık */
         flex-shrink: 0;
       }
       html.no-flex-gap #scoreRow .hi-group > * + * {
-        margin-left: 2px;
+        margin-left: 1px; /* Kupa ile sayıyı birbirine yaklaştırdık */
       }
       html.no-flex-gap #scoreRow .hp + .hp {
-        margin-left: 1px;
+        margin-left: -3px; /* Kanguruları birbirine çektik */
       }
-      html.no-flex-gap #scoreRow .score-hi-label,
-      html.no-flex-gap #scoreRow .score-hi,
-      html.no-flex-gap #scoreRow .score-cur {
-        line-height: 1;
-        display: inline-block;
-        vertical-align: middle;
-        flex-shrink: 0;
-        white-space: nowrap;
-      }
+      /* ... ve devamında font boyutları */
       html.no-flex-gap #scoreRow .score-hi-label { font-size: 12px; }
-      html.no-flex-gap #scoreRow .score-hi      { font-size: 12px; letter-spacing: 0; margin-left: 2px; }
-      html.no-flex-gap #scoreRow .score-cur     { font-size: 12px; margin: 0 2px; }
-      html.no-flex-gap #scoreRow .hp            { width: 15px; height: 15px; margin: 0 1px; }
-      html.no-flex-gap #scoreRow .hp svg        { width: 15px; height: 15px; }     
+      html.no-flex-gap #scoreRow .score-hi      { font-size: 12px; letter-spacing: 0; margin-left: 1px; }
+      html.no-flex-gap #scoreRow .score-cur     { font-size: 12px; margin: 0 1px; }
+      html.no-flex-gap #scoreRow .hp            { width: 15px; height: 15px; margin: 0; }
+      html.no-flex-gap #scoreRow .hp svg        { width: 15px; height: 15px; } 
 
       html.no-flex-gap #langMenu {
         min-width: 150px;
