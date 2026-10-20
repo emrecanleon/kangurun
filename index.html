@@ -917,6 +917,41 @@
       html.no-flex-gap #wrap {
         justify-content: center;
       }
+      /* ===== RTL (Arapça) + ESKİ CİHAZ DÜZELTMESİ ===== */
+      /* html[dir="rtl"] + no-flex-gap kombinasyonunda öğeleri düzelt */
+      html.no-flex-gap[dir="rtl"] #scoreRow {
+        justify-content: center;
+        gap: 0;
+      }
+      html.no-flex-gap[dir="rtl"] #scoreRow .hi-group {
+        margin-right: 0;
+        margin-left: 3px;
+      }
+      html.no-flex-gap[dir="rtl"] #scoreRow .hi-group > * + * {
+        margin-left: 0;
+        margin-right: 2px;
+      }
+      html.no-flex-gap[dir="rtl"] #scoreRow .score-hi,
+      html.no-flex-gap[dir="rtl"] #scoreRow .score-cur {
+        margin-left: 0;
+        margin-right: 1px;
+      }
+      /* Dil menüsü: bayrak sağda, yazı solda olacak şekilde */
+      html.no-flex-gap[dir="rtl"] .lang-item .flag,
+      html.no-flex-gap[dir="rtl"] .lang-item svg {
+        margin-right: 0;
+        margin-left: 8px;
+      }
+      /* RTL'de menü sola açılmalı */
+      html.no-flex-gap[dir="rtl"] #langMenu {
+        right: auto;
+        left: 0;
+      }
+      /* Dil butonu içindeki bayrak ve yazı arası boşluk */
+      html.no-flex-gap[dir="rtl"] .hud-btn > * + * {
+        margin-left: 0;
+        margin-right: 4px;
+      }
     </style>
   </head>
 
