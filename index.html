@@ -952,6 +952,27 @@
         margin-left: 0;
         margin-right: 4px;
       }
+      /* ===== ESKİ CİHAZ: About penceresi düzeltmesi ===== */
+      /* iPad Mini 2'de position:fixed ve inset sorununu giderir */
+      html.no-flex-gap #about {
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.55);
+        padding: 16px;
+        box-sizing: border-box;
+      }
+      html.no-flex-gap #aboutPanel {
+        margin: auto;
+        max-height: 90vh;
+        box-sizing: border-box;
+      }
     </style>
   </head>
 
