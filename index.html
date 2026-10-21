@@ -364,7 +364,13 @@
           0 2px 4px rgba(0, 0, 0, 0.85),
           0 0 1px rgba(0, 0, 0, 0.9);
       }
-
+      :root[data-theme="dark"] #scoreRow .score-hi-label {
+        color: #e8eaed;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+      }
+      :root[data-theme="dark"] #scoreRow .score-cur {
+        color: #a0a5aa;
+      }
       /* Gece modu: rekor rengi altın kalır */
       :root[data-theme="dark"] #scoreRow .score-hi {
         color: #DAA520;
@@ -454,27 +460,30 @@
       #scoreRow {
         cursor: default;
         justify-content: space-between;
+        align-items: center;
         height: 40px;
         max-height: 40px;
         padding: 0 14px;
-        text-shadow: none;
+        overflow: hidden;
+        gap: 4px;
       }
 
       #scoreRow .hi-group {
         display: flex;
         align-items: center;
         gap: 4px;
-        margin-inline-end: 0;
+        flex-shrink: 0;
       }
 
       #scoreRow .score-hi-label {
         font-size: 16px;
         line-height: 1;
-        display: block;
+        display: inline-block;
+        flex-shrink: 0;
       }
 
       #scoreRow .score-hi {
-        color: #1e3a5f;
+        color: #1a1a1a;
         font-size: 16px;
         font-weight: 800;
         letter-spacing: 0.3px;
@@ -482,16 +491,51 @@
       }
 
       #scoreRow .score-cur {
-        color: #6b7c8a;
+        color: #6e7377;
         font-size: 16px;
         font-weight: 800;
+        margin-inline-start: auto;
+        margin-inline-end: 0;
+        flex-shrink: 0;
         font-variant-numeric: tabular-nums;
       }
 
       #scoreRow .hp {
-        font-size: 15px;
-        margin-inline-start: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
         flex-shrink: 0;
+        margin-inline-start: 0;
+        vertical-align: middle;
+        line-height: 1;
+        font-size: 15px;
+        transform: translateY(-1px) scaleX(-1); /* yukarı kaydır + sağa çevir */
+      }
+
+      #scoreRow .hp svg {
+        width: 18px;
+        height: 18px;
+        display: block;
+        color: var(--fg);
+        fill: var(--fg);
+        shape-rendering: crispEdges;
+      }
+
+      #scoreRow .hp.off svg {
+        color: #b0b0b0;
+        fill: #b0b0b0;
+      }
+
+      #lives {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 2px;
+        flex-shrink: 0;
+        padding-inline-end: 2px;
+        line-height: 1;
       }
 
       #scoreRow .hp.off {
@@ -850,7 +894,7 @@
       html.no-flex-gap #scoreRow .score-hi-label { font-size: 12px; }
       html.no-flex-gap #scoreRow .score-hi      { font-size: 12px; letter-spacing: 0; margin-left: 1px; }
       html.no-flex-gap #scoreRow .score-cur     { font-size: 12px; margin: 0 1px; }
-      html.no-flex-gap #scoreRow .hp            { width: 15px; height: 15px; margin: 0; }
+      html.no-flex-gap #scoreRow .hp            { width: 15px; height: 15px; margin: 0; display: inline-flex; align-items: center; justify-content: center; line-height: 1; vertical-align: middle; transform: translateY(-1px) scaleX(-1); }
       html.no-flex-gap #scoreRow .hp svg        { width: 15px; height: 15px; } 
 
       html.no-flex-gap #langMenu {
