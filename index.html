@@ -6,6 +6,33 @@
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
+    <script>
+      /*
+       * Android Chrome PWA (standalone) modunda görülen sağdan kesilme hatasını düzeltir.
+       * Chrome 135+ edge-to-edge geçişinde viewport-fit=cover ile birlikte
+       * safe-area-inset-right değerini yanlış hesaplıyor.
+       * Bu script SADECE Android + standalone modunda devreye girer.
+       * iOS, iPad, Android tablet ve normal tarayıcı sekmelerinde HİÇBİR ŞEY değiştirmez.
+       */
+      (function () {
+        var isStandalone =
+          window.matchMedia("(display-mode: standalone)").matches ||
+          window.navigator.standalone === true ||
+          document.referrer.indexOf("android-app://") === 0;
+        var isAndroid = /Android/i.test(navigator.userAgent);
+        if (isStandalone && isAndroid) {
+          var vp = document.querySelector('meta[name="viewport"]');
+          if (vp) {
+            // viewport-fit=cover'ı kaldır → Chrome sayfayı güvenli alan içinde tutar
+            vp.setAttribute(
+              "content",
+              "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+            );
+          }
+        }
+      })();
+    </script>
+
     <title>KanguRun</title>
     <meta
       name="description"
@@ -120,12 +147,13 @@
 
       canvas {
         position: fixed;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        max-width: 100%;
-        max-height: 100%;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 100vw;
+        height: 100vh;
+        max-width: 100vw;
+        max-height: 100vh;
         background: var(--bg);
         touch-action: none;
         image-rendering: pixelated;
@@ -292,8 +320,6 @@
       #topright {
         right: calc(12px + env(safe-area-inset-right, 0px));
         align-items: flex-end;
-        max-width: calc(100% - 24px);
-        box-sizing: border-box;
       }
 
       html[dir="rtl"] #topleft {
@@ -1134,13 +1160,9 @@
           VH = 150,
           narrowMode = null; // mantıksal tuval boyutu
         function fitCanvas() {
-          // Android'de innerWidth geç güncellenebilir; visualViewport daha güvenilir.
-          const vv = window.visualViewport;
-          const viewportWidth = vv ? vv.width : window.innerWidth;
-          const viewportHeight = vv ? vv.height : window.innerHeight;
-
-          const narrow = viewportWidth < 700;
+          const narrow = window.innerWidth < 700;
           narrowMode = narrow;
+
           // Gerçek safe-area değerlerini ölç (CSS env() bazen 0 döner)
           const probe = document.createElement("div");
           probe.style.cssText =
@@ -1164,8 +1186,8 @@
           // ===== TÜM EKRANLARDA: TAM EKRAN OYUN =====
           // Canvas konumu ve boyutu tamamen CSS'te tanımlı (left/top/transform/width/height).
           // JS sadece iç çözünürlüğü ve VW/VH'yi ayarlar.
-          const cssW = viewportWidth;
-          const cssH = viewportHeight;
+          const cssW = window.innerWidth;
+          const cssH = window.innerHeight;
           const aspect = cssW / cssH;
 
           // ===== DİKEY MOBİL (portrait): özel strateji =====
