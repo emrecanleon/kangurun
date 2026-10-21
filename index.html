@@ -1134,9 +1134,13 @@
           VH = 150,
           narrowMode = null; // mantıksal tuval boyutu
         function fitCanvas() {
-          const narrow = window.innerWidth < 700;
-          narrowMode = narrow;
+          // Android'de innerWidth geç güncellenebilir; visualViewport daha güvenilir.
+          const vv = window.visualViewport;
+          const viewportWidth = vv ? vv.width : window.innerWidth;
+          const viewportHeight = vv ? vv.height : window.innerHeight;
 
+          const narrow = viewportWidth < 700;
+          narrowMode = narrow;
           // Gerçek safe-area değerlerini ölç (CSS env() bazen 0 döner)
           const probe = document.createElement("div");
           probe.style.cssText =
@@ -1160,8 +1164,8 @@
           // ===== TÜM EKRANLARDA: TAM EKRAN OYUN =====
           // Canvas konumu ve boyutu tamamen CSS'te tanımlı (left/top/transform/width/height).
           // JS sadece iç çözünürlüğü ve VW/VH'yi ayarlar.
-          const cssW = document.documentElement.clientWidth || window.innerWidth;
-          const cssH = document.documentElement.clientHeight || window.innerHeight;
+          const cssW = viewportWidth;
+          const cssH = viewportHeight;
           const aspect = cssW / cssH;
 
           // ===== DİKEY MOBİL (portrait): özel strateji =====
