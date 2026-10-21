@@ -6,33 +6,6 @@
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
-    <script>
-      /*
-       * Android Chrome PWA (standalone) modunda görülen sağdan kesilme hatasını düzeltir.
-       * Chrome 135+ edge-to-edge geçişinde viewport-fit=cover ile birlikte
-       * safe-area-inset-right değerini yanlış hesaplıyor.
-       * Bu script SADECE Android + standalone modunda devreye girer.
-       * iOS, iPad, Android tablet ve normal tarayıcı sekmelerinde HİÇBİR ŞEY değiştirmez.
-       */
-      (function () {
-        var isStandalone =
-          window.matchMedia("(display-mode: standalone)").matches ||
-          window.navigator.standalone === true ||
-          document.referrer.indexOf("android-app://") === 0;
-        var isAndroid = /Android/i.test(navigator.userAgent);
-        if (isStandalone && isAndroid) {
-          var vp = document.querySelector('meta[name="viewport"]');
-          if (vp) {
-            // viewport-fit=cover'ı kaldır → Chrome sayfayı güvenli alan içinde tutar
-            vp.setAttribute(
-              "content",
-              "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-            );
-          }
-        }
-      })();
-    </script>
-
     <title>KanguRun</title>
     <meta
       name="description"
@@ -322,6 +295,15 @@
         align-items: flex-end;
       }
 
+      /* Android PWA (standalone) modunda yatayda sağdaki gesture bar için ekstra boşluk */
+      @media (display-mode: standalone) and (orientation: landscape) {
+        #topright {
+          right: calc(24px + env(safe-area-inset-right, 0px)) !important;
+        }
+        #topleft {
+          left: calc(24px + env(safe-area-inset-left, 0px)) !important;
+        }
+      }
       html[dir="rtl"] #topleft {
         left: auto;
         right: calc(12px + env(safe-area-inset-right, 0px));
@@ -1174,8 +1156,10 @@
 
           // Mobil yatayda HUD'u kesin içeri çek (safe-area + minimum 14px)
           const isLandscape = window.innerWidth > window.innerHeight;
+          const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
           if (narrow && isLandscape) {
-            const pad = Math.max(saL + 14, 14);
+            const basePad = isStandalone ? 24 : 14;
+            const pad = Math.max(saL + basePad, basePad);
             document.getElementById("topleft").style.left = pad + "px";
             document.getElementById("topright").style.right = pad + "px";
           } else {
