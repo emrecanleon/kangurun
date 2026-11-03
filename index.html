@@ -3083,9 +3083,12 @@
           soundBtn.blur();
         });
         document.addEventListener("visibilitychange", () => {
-          if (!audioCtx) return;
-          if (document.hidden) audioCtx.suspend();
-          else audioCtx.resume();
+          if (document.hidden) {
+            if (audioCtx) audioCtx.suspend();
+            if (running && !paused) setPaused(true);
+          } else {
+            if (audioCtx) audioCtx.resume();
+          }
         });
         renderSound();
 
