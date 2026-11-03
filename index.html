@@ -797,6 +797,14 @@
         margin-left: 4px;
       }
 
+      /* ===== ESKİ CİHAZ: HUD butonları arası dikey boşluk ===== */
+      html.no-flex-gap .hud > * + * {
+        margin-top: 8px;
+      }
+      html.no-flex-gap[dir="rtl"] .hud > * + * {
+        margin-top: 8px;
+      }
+
       html.no-flex-gap #card {
         padding: 8px 4px;
         max-width: 94vw;
